@@ -8,15 +8,11 @@ Vue.js + Rails APIで構築されたダッシュボードアプリケーショ�
 - Ruby 3.2.0
 - Rails 8.1.1 (APIモード)
 - MySQL 8.0
-- JWT認証
 
 ### フロントエンド
 - Vue.js 3
 - Vite
 - Tailwind CSS v3
-- Pinia (状態管理)
-- Vue Router 4
-- Axios
 
 ### テスト
 - Playwright (E2Eテスト)
@@ -34,9 +30,6 @@ Vue.js + Rails APIで構築されたダッシュボードアプリケーショ�
 ### 初回セットアップ
 
 1. リポジトリをクローン
-```bash
-cd /home/dev/projects/patto
-```
 
 2. バックエンドの依存関係をインストール
 ```bash
@@ -58,11 +51,6 @@ npm install
 ./start.sh
 ```
 
-このスクリプトは以下を自動的に実行します：
-- MySQLコンテナの起動
-- Railsサーバーの起動（ポート3000）
-- Viteサーバーの起動（ポート5173）
-
 ### アクセスURL
 - **フロントエンド**: http://localhost:5173
 - **バックエンドAPI**: http://localhost:3000
@@ -72,29 +60,6 @@ npm install
 
 ```bash
 ./stop.sh
-```
-
-MySQLコンテナを停止するかどうか選択できます。
-
-## 手動起動
-
-個別にサービスを起動する場合：
-
-### MySQLのみ起動
-```bash
-docker compose up -d mysql
-```
-
-### Railsサーバーのみ起動
-```bash
-cd backend
-bundle exec rails server -p 3000
-```
-
-### Viteサーバーのみ起動
-```bash
-cd frontend
-npm run dev
 ```
 
 ## データベース
@@ -155,44 +120,3 @@ npm run test:e2e
 ├── stop.sh          # 停止スクリプト
 └── README.md
 ```
-
-## トラブルシューティング
-
-### ポートが既に使用されている場合
-
-使用中のプロセスを確認：
-```bash
-# ポート3000の確認
-lsof -i :3000
-
-# ポート5173の確認
-lsof -i :5173
-
-# ポート3306の確認
-lsof -i :3306
-```
-
-プロセスを停止：
-```bash
-kill -9 <PID>
-```
-
-### ログの確認
-
-アプリケーションログ：
-```bash
-# Railsログ
-tail -f logs/rails.log
-
-# Viteログ
-tail -f logs/vite.log
-```
-
-Dockerログ：
-```bash
-docker compose logs -f mysql
-```
-
-## 開発進捗
-
-詳細は `PROGRESS.md` を参照してください。
