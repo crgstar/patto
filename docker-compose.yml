@@ -1,0 +1,25 @@
+# 開発環境用のDocker Compose設定
+# 注意: このファイルに含まれるパスワードは開発環境専用です。
+#       本番環境では環境変数を使用してください。
+
+services:
+  mysql:
+    image: mysql:8.0
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password  # 開発環境専用
+      MYSQL_DATABASE: patto_development
+      MYSQL_USER: patto_user
+      MYSQL_PASSWORD: patto_password  # 開発環境専用
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  mysql_data:

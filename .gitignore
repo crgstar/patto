@@ -1,0 +1,71 @@
+# 環境変数ファイル
+.env
+.env.*
+!.env.example
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# エディタ
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.sw?
+*~
+
+# ログファイル
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.pid
+
+# 一時ファイル
+tmp/
+temp/
+
+# Docker関連
+.docker/
+
+# バックエンド（Rails）
+backend/.bundle
+backend/log/*
+!backend/log/.keep
+backend/tmp/*
+!backend/tmp/.keep
+!backend/tmp/pids/
+!backend/tmp/pids/.keep
+!backend/tmp/storage/
+!backend/tmp/storage/.keep
+backend/storage/*
+!backend/storage/.keep
+backend/config/*.key
+backend/vendor/
+
+# フロントエンド（Vue.js/Vite）
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/test-results/
+*.local
+
+# Node.js
+node_modules/
+
+# その他
+.cache/
+
+# プロジェクト固有
+CLAUDE.md
+PROGRESS.md
+.claude/
