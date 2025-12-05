@@ -10,7 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_02_130041) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_05_005732) do
+  create_table "stickies", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.integer "position", default: 0, null: false
+    t.string "title"
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["discarded_at"], name: "index_stickies_on_discarded_at"
+    t.index ["user_id", "position"], name: "index_stickies_on_user_id_and_position"
+    t.index ["user_id"], name: "index_stickies_on_user_id"
+  end
+
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email"
@@ -18,4 +32,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_02_130041) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
   end
+
+  add_foreign_key "stickies", "users"
 end
