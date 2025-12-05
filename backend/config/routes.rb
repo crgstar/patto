@@ -6,5 +6,11 @@ Rails.application.routes.draw do
     post '/login', to: 'sessions#create'
     delete '/logout', to: 'sessions#destroy'
     get '/current_user', to: 'current_user#show'
+
+    resources :stickies, only: [:index, :create, :update, :destroy] do
+      collection do
+        patch :reorder
+      end
+    end
   end
 end
