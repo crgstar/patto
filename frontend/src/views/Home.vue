@@ -8,12 +8,35 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { VueDraggable } from 'vue-draggable-plus'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { User, Plus, Edit2, Trash2, MoreVertical } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const stickyStore = useStickyStore()
 
 const editingId = ref(null)
+
+const startEditingTitle = (id) => {
+  editingId.value = id
+  // 次のティックでinputにフォーカス
+  setTimeout(() => {
+    const input = document.querySelector(`[data-sticky-title-id="${id}"]`)
+    if (input) input.focus()
+  }, 0)
+}
+
+const finishEditingTitle = (id, value) => {
+  editingId.value = null
+  updateSticky(id, 'title', value)
+}
 
 onMounted(async () => {
   const success = await authStore.fetchCurrentUser()
@@ -65,83 +88,131 @@ const handleDragEnd = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background p-4">
-    <div class="max-w-4xl mx-auto">
-      <Card class="mb-4 shadow-md">
-        <CardHeader class="flex flex-row items-center justify-between">
-          <CardTitle>ダッシュボード</CardTitle>
-          <Button @click="handleLogout" variant="outline">
-            ログアウト
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div v-if="authStore.user" class="space-y-2">
-            <p class="text-sm text-muted-foreground">ログイン中のユーザー</p>
-            <p class="text-lg font-semibold text-foreground">{{ authStore.user.email }}</p>
-          </div>
-          <div v-else class="text-center text-muted-foreground">
-            ユーザー情報を読み込み中...
-          </div>
-        </CardContent>
-      </Card>
-
-      <!-- Sticky一覧 -->
-      <div class="mb-4">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold text-foreground">付箋</h2>
-          <Button @click="createSticky" data-testid="create-sticky-button">
-            新しい付箋
-          </Button>
-        </div>
-
-        <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-muted-foreground">
-          付箋がありません
-        </div>
-
-        <VueDraggable
-          v-else
-          v-model="stickyStore.stickies"
-          @end="handleDragEnd"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          :animation="200"
+  <div class="min-h-screen bg-background">
+    <!-- ヘッダー -->
+    <header class="border-b bg-background">
+      <div class="flex items-center justify-end gap-3 px-6 py-4">
+        <!-- 新しい付箋ボタン -->
+        <Button
+          @click="createSticky"
+          data-testid="create-sticky-button"
+          variant="ghost"
+          size="icon"
+          class="rounded-full bg-blue-50 hover:bg-blue-100"
         >
-          <Card
-            v-for="sticky in stickyStore.stickies"
-            :key="sticky.id"
-            class="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-move shadow-sm hover:shadow-md transition-shadow"
-          >
-            <CardHeader>
+          <Plus class="h-5 w-5 text-blue-600" />
+        </Button>
+
+        <!-- ユーザーメニュー -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="icon" class="rounded-full bg-blue-50 hover:bg-blue-100">
+              <User class="h-5 w-5 text-blue-600" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuLabel>
+              <div class="flex flex-col space-y-1">
+                <p class="text-sm font-medium leading-none">ログインユーザー</p>
+                <p class="text-xs leading-none text-muted-foreground" v-if="authStore.user">
+                  {{ authStore.user.email }}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="handleLogout">
+              ログアウト
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+
+    <!-- 付箋一覧 -->
+    <main class="px-4 py-6">
+      <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-muted-foreground">
+        付箋がありません
+      </div>
+
+      <VueDraggable
+        v-else
+        v-model="stickyStore.stickies"
+        @end="handleDragEnd"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        :animation="200"
+      >
+        <Card
+          v-for="sticky in stickyStore.stickies"
+          :key="sticky.id"
+          class="group bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-move shadow-sm hover:shadow-md transition-shadow"
+        >
+          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <!-- タイトル表示/編集 -->
+            <div class="flex-1 flex items-center gap-2">
               <input
+                v-if="editingId === sticky.id"
                 :value="sticky.title"
-                @blur="updateSticky(sticky.id, 'title', $event.target.value)"
+                @blur="finishEditingTitle(sticky.id, $event.target.value)"
+                @keyup.enter="finishEditingTitle(sticky.id, $event.target.value)"
+                :data-sticky-title-id="sticky.id"
                 :data-testid="`sticky-${sticky.id}-title`"
                 placeholder="タイトル"
-                class="font-semibold bg-transparent border-none focus-visible:ring-0 p-0 w-full outline-none text-foreground placeholder:text-muted-foreground"
+                class="font-semibold bg-transparent border-b border-blue-300 focus:border-blue-500 p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
               />
-            </CardHeader>
-            <CardContent>
-              <textarea
-                :value="sticky.content"
-                @blur="updateSticky(sticky.id, 'content', $event.target.value)"
-                :data-testid="`sticky-${sticky.id}-content`"
-                placeholder="内容を入力..."
-                class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none text-foreground placeholder:text-muted-foreground"
-              />
-              <div class="mt-4 flex justify-end">
+              <div v-else class="flex items-center gap-2 flex-1">
+                <span class="font-semibold text-foreground">
+                  {{ sticky.title || 'タイトル' }}
+                </span>
                 <Button
-                  @click="deleteSticky(sticky.id)"
-                  :data-testid="`delete-sticky-${sticky.id}`"
+                  @click="startEditingTitle(sticky.id)"
                   variant="ghost"
-                  size="sm"
-                  class="text-destructive hover:text-destructive/80"
+                  size="icon"
+                  class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  削除
+                  <Edit2 class="h-3 w-3" />
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        </VueDraggable>
-      </div>
-    </div>
+            </div>
+
+            <!-- オプションメニュー -->
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="h-6 w-6 hover:bg-gray-200"
+                >
+                  <MoreVertical class="h-4 w-4 text-gray-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem @click="startEditingTitle(sticky.id)">
+                  <Edit2 class="mr-2 h-4 w-4" />
+                  タイトルを編集
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  @click="deleteSticky(sticky.id)"
+                  :data-testid="`delete-sticky-${sticky.id}`"
+                  class="text-destructive focus:text-destructive"
+                >
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  削除
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardHeader>
+          <CardContent>
+            <textarea
+              :value="sticky.content"
+              @blur="updateSticky(sticky.id, 'content', $event.target.value)"
+              :data-testid="`sticky-${sticky.id}-content`"
+              placeholder="内容を入力..."
+              class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none text-foreground placeholder:text-muted-foreground"
+            />
+          </CardContent>
+        </Card>
+      </VueDraggable>
+    </main>
   </div>
 </template>
