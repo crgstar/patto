@@ -5,17 +5,19 @@ import axios from 'axios'
 
 // axiosをモック化
 vi.mock('axios', () => {
-  return {
-    default: {
-      post: vi.fn(),
-      get: vi.fn(),
-      delete: vi.fn(),
-      defaults: {
-        headers: {
-          common: {}
-        }
+  const mockAxios = {
+    post: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn(),
+    defaults: {
+      headers: {
+        common: {}
       }
-    }
+    },
+    create: vi.fn(() => mockAxios)
+  }
+  return {
+    default: mockAxios
   }
 })
 

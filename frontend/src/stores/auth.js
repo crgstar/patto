@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
-
-const API_BASE_URL = 'http://localhost:3000/api'
+import apiClient from '@/lib/apiClient'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || null)
@@ -18,7 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
+      const response = await apiClient.post('/login', {
         email,
         password
       })
@@ -43,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/signup`, {
+      const response = await apiClient.post('/signup', {
         user: {
           email,
           password,
@@ -68,7 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
   // ログアウト
   const logout = async () => {
     try {
-      await axios.delete(`${API_BASE_URL}/logout`)
+      await apiClient.delete('/logout')
     } catch (err) {
       console.error('ログアウトエラー:', err)
     }
@@ -87,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      const response = await axios.get(`${API_BASE_URL}/current_user`)
+      const response = await apiClient.get('/current_user')
       user.value = response.data.user
       return true
     } catch (err) {
