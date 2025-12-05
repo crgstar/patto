@@ -23,15 +23,15 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-    <Card class="w-full max-w-md">
+  <div class="min-h-screen flex items-center justify-center bg-background p-4">
+    <Card class="w-full max-w-md shadow-lg">
       <CardHeader>
         <CardTitle class="text-2xl">ログイン</CardTitle>
         <CardDescription>メールアドレスとパスワードを入力してください</CardDescription>
       </CardHeader>
 
       <CardContent class="space-y-4">
-        <div v-if="authStore.error" class="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-200">
+        <div v-if="authStore.error" class="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md border border-destructive/30">
           {{ authStore.error }}
         </div>
 
@@ -69,9 +69,9 @@ const handleLogin = async () => {
           {{ authStore.loading ? 'ログイン中...' : 'ログイン' }}
         </Button>
 
-        <p class="text-sm text-center text-slate-600">
+        <p class="text-sm text-center text-muted-foreground">
           アカウントをお持ちでない方は
-          <router-link to="/signup" class="text-blue-600 hover:underline">
+          <router-link to="/signup" class="text-foreground hover:underline font-medium">
             サインアップ
           </router-link>
         </p>

@@ -65,9 +65,9 @@ const handleDragEnd = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 p-4">
+  <div class="min-h-screen bg-background p-4">
     <div class="max-w-4xl mx-auto">
-      <Card class="mb-4">
+      <Card class="mb-4 shadow-md">
         <CardHeader class="flex flex-row items-center justify-between">
           <CardTitle>ダッシュボード</CardTitle>
           <Button @click="handleLogout" variant="outline">
@@ -76,10 +76,10 @@ const handleDragEnd = async () => {
         </CardHeader>
         <CardContent>
           <div v-if="authStore.user" class="space-y-2">
-            <p class="text-sm text-slate-600">ログイン中のユーザー</p>
-            <p class="text-lg font-semibold">{{ authStore.user.email }}</p>
+            <p class="text-sm text-muted-foreground">ログイン中のユーザー</p>
+            <p class="text-lg font-semibold text-foreground">{{ authStore.user.email }}</p>
           </div>
-          <div v-else class="text-center text-slate-500">
+          <div v-else class="text-center text-muted-foreground">
             ユーザー情報を読み込み中...
           </div>
         </CardContent>
@@ -88,13 +88,13 @@ const handleDragEnd = async () => {
       <!-- Sticky一覧 -->
       <div class="mb-4">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-bold text-slate-800">付箋</h2>
+          <h2 class="text-2xl font-bold text-foreground">付箋</h2>
           <Button @click="createSticky" data-testid="create-sticky-button">
             新しい付箋
           </Button>
         </div>
 
-        <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-slate-500">
+        <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-muted-foreground">
           付箋がありません
         </div>
 
@@ -108,7 +108,7 @@ const handleDragEnd = async () => {
           <Card
             v-for="sticky in stickyStore.stickies"
             :key="sticky.id"
-            class="bg-yellow-100 border-yellow-300 cursor-move"
+            class="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-move shadow-sm hover:shadow-md transition-shadow"
           >
             <CardHeader>
               <input
@@ -116,7 +116,7 @@ const handleDragEnd = async () => {
                 @blur="updateSticky(sticky.id, 'title', $event.target.value)"
                 :data-testid="`sticky-${sticky.id}-title`"
                 placeholder="タイトル"
-                class="font-semibold bg-transparent border-none focus-visible:ring-0 p-0 w-full outline-none"
+                class="font-semibold bg-transparent border-none focus-visible:ring-0 p-0 w-full outline-none text-foreground placeholder:text-muted-foreground"
               />
             </CardHeader>
             <CardContent>
@@ -125,7 +125,7 @@ const handleDragEnd = async () => {
                 @blur="updateSticky(sticky.id, 'content', $event.target.value)"
                 :data-testid="`sticky-${sticky.id}-content`"
                 placeholder="内容を入力..."
-                class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none"
+                class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none text-foreground placeholder:text-muted-foreground"
               />
               <div class="mt-4 flex justify-end">
                 <Button
@@ -133,7 +133,7 @@ const handleDragEnd = async () => {
                   :data-testid="`delete-sticky-${sticky.id}`"
                   variant="ghost"
                   size="sm"
-                  class="text-red-600 hover:text-red-700"
+                  class="text-destructive hover:text-destructive/80"
                 >
                   削除
                 </Button>

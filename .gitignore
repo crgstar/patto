@@ -74,3 +74,4 @@ PLAYWRIGHT_MCP_USAGE.md
 playwright-mcp-enable.sh
 playwright-mcp-disable.sh
 docs/archive/
+.playwright-mcp/
