@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
 import apiClient from '@/lib/apiClient'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -25,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token
       user.value = response.data.user
       localStorage.setItem('token', response.data.token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
 
       return true
     } catch (err) {
@@ -53,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token
       user.value = response.data.user
       localStorage.setItem('token', response.data.token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
 
       return true
     } catch (err) {
@@ -75,7 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
+    delete apiClient.defaults.headers.common['Authorization']
   }
 
   // 現在のユーザー情報を取得
@@ -85,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
 
     try {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       const response = await apiClient.get('/current_user')
       user.value = response.data.user
       return true
@@ -94,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null
       user.value = null
       localStorage.removeItem('token')
-      delete axios.defaults.headers.common['Authorization']
+      delete apiClient.defaults.headers.common['Authorization']
       return false
     } finally {
       loading.value = false
