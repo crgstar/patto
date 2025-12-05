@@ -1,23 +1,66 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useStickyStore } from '@/stores/sticky'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { VueDraggable } from 'vue-draggable-plus'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const stickyStore = useStickyStore()
+
+const editingId = ref(null)
 
 onMounted(async () => {
   const success = await authStore.fetchCurrentUser()
   if (!success) {
     router.push('/login')
+    return
   }
+
+  await stickyStore.fetchStickies()
 })
 
 const handleLogout = async () => {
   await authStore.logout()
   router.push('/login')
+}
+
+const createSticky = async () => {
+  const maxPosition = stickyStore.stickies.length > 0
+    ? Math.max(...stickyStore.stickies.map(s => s.position))
+    : 0
+
+  await stickyStore.createSticky({
+    type: 'Sticky',
+    title: '',
+    content: '',
+    position: maxPosition + 1
+  })
+}
+
+const updateSticky = async (id, field, value) => {
+  await stickyStore.updateSticky(id, { [field]: value })
+}
+
+const deleteSticky = async (id) => {
+  if (confirm('この付箋を削除してもよろしいですか？')) {
+    await stickyStore.deleteSticky(id)
+  }
+}
+
+const handleDragEnd = async () => {
+  // 現在の順番でpositionを更新
+  const reorderedStickies = stickyStore.stickies.map((sticky, index) => ({
+    ...sticky,
+    position: index + 1
+  }))
+
+  await stickyStore.reorderStickies(reorderedStickies)
 }
 </script>
 
@@ -41,6 +84,64 @@ const handleLogout = async () => {
           </div>
         </CardContent>
       </Card>
+
+      <!-- Sticky一覧 -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold text-slate-800">付箋</h2>
+          <Button @click="createSticky" data-testid="create-sticky-button">
+            新しい付箋
+          </Button>
+        </div>
+
+        <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-slate-500">
+          付箋がありません
+        </div>
+
+        <VueDraggable
+          v-else
+          v-model="stickyStore.stickies"
+          @end="handleDragEnd"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          :animation="200"
+        >
+          <Card
+            v-for="sticky in stickyStore.stickies"
+            :key="sticky.id"
+            class="bg-yellow-100 border-yellow-300 cursor-move"
+          >
+            <CardHeader>
+              <input
+                :value="sticky.title"
+                @blur="updateSticky(sticky.id, 'title', $event.target.value)"
+                :data-testid="`sticky-${sticky.id}-title`"
+                placeholder="タイトル"
+                class="font-semibold bg-transparent border-none focus-visible:ring-0 p-0 w-full outline-none"
+              />
+            </CardHeader>
+            <CardContent>
+              <textarea
+                :value="sticky.content"
+                @blur="updateSticky(sticky.id, 'content', $event.target.value)"
+                :data-testid="`sticky-${sticky.id}-content`"
+                placeholder="内容を入力..."
+                class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none"
+              />
+              <div class="mt-4 flex justify-end">
+                <Button
+                  @click="deleteSticky(sticky.id)"
+                  :data-testid="`delete-sticky-${sticky.id}`"
+                  variant="ghost"
+                  size="sm"
+                  class="text-red-600 hover:text-red-700"
+                >
+                  削除
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </VueDraggable>
+      </div>
     </div>
   </div>
 </template>
