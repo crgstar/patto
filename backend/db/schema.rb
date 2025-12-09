@@ -10,18 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_05_022559) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_09_000001) do
   create_table "stickies", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.text "content"
     t.datetime "created_at", null: false
     t.datetime "discarded_at"
+    t.integer "height", default: 1, null: false
     t.integer "position", default: 0, null: false
     t.string "title"
     t.string "type", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.integer "width", default: 1, null: false
+    t.integer "x", default: 0, null: false
+    t.integer "y", default: 0, null: false
     t.index ["discarded_at"], name: "index_stickies_on_discarded_at"
     t.index ["user_id", "position"], name: "index_stickies_on_user_id_and_position"
+    t.index ["user_id", "x", "y"], name: "index_stickies_on_user_id_and_x_and_y"
     t.index ["user_id"], name: "index_stickies_on_user_id"
   end
 

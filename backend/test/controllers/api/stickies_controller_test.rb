@@ -241,4 +241,125 @@ class Api::StickiesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  # 座標関連のテスト
+  test "should create sticky with coordinates" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Sticky',
+             title: 'Test Sticky',
+             content: 'Test content',
+             x: 5,
+             y: 10,
+             width: 2,
+             height: 3
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+
+    assert_equal 5, json_response['sticky']['x']
+    assert_equal 10, json_response['sticky']['y']
+    assert_equal 2, json_response['sticky']['width']
+    assert_equal 3, json_response['sticky']['height']
+  end
+
+  test "should create sticky with auto positioning when coordinates not specified" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Sticky',
+             title: 'Test Sticky',
+             content: 'Test content'
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+
+    assert_not_nil json_response['sticky']['x']
+    assert_not_nil json_response['sticky']['y']
+    assert_equal 1, json_response['sticky']['width']
+    assert_equal 1, json_response['sticky']['height']
+  end
+
+  test "should include coordinates in index response" do
+    @sticky.update!(x: 3, y: 7, width: 2, height: 2)
+
+    get api_stickies_url,
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    sticky_data = json_response['stickies'].first
+
+    assert_equal 3, sticky_data['x']
+    assert_equal 7, sticky_data['y']
+    assert_equal 2, sticky_data['width']
+    assert_equal 2, sticky_data['height']
+  end
+
+  test "should update sticky coordinates" do
+    patch api_sticky_url(@sticky),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              x: 5,
+              y: 10,
+              width: 3,
+              height: 2
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+
+    assert_equal 5, json_response['sticky']['x']
+    assert_equal 10, json_response['sticky']['y']
+    assert_equal 3, json_response['sticky']['width']
+    assert_equal 2, json_response['sticky']['height']
+  end
+
+  test "should reorder stickies with coordinates" do
+    sticky2 = Sticky.create!(
+      type: 'Sticky',
+      title: 'Second Sticky',
+      x: 0,
+      y: 1,
+      user: @user
+    )
+
+    patch reorder_api_stickies_url,
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            stickies: [
+              { id: @sticky.id, x: 5, y: 10, w: 2, h: 3 },
+              { id: sticky2.id, x: 7, y: 12, w: 1, h: 2 }
+            ]
+          },
+          as: :json
+
+    assert_response :ok
+
+    @sticky.reload
+    sticky2.reload
+
+    assert_equal 5, @sticky.x
+    assert_equal 10, @sticky.y
+    assert_equal 2, @sticky.width
+    assert_equal 3, @sticky.height
+
+    assert_equal 7, sticky2.x
+    assert_equal 12, sticky2.y
+    assert_equal 1, sticky2.width
+    assert_equal 2, sticky2.height
+  end
 end
