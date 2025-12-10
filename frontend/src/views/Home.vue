@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { User, Plus, Edit2, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
+import { cn } from '@/lib/utils'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -81,13 +82,79 @@ const deleteSticky = async (id) => {
 const handleLayoutUpdated = async (newLayout) => {
   await stickyStore.updateLayout(newLayout)
 }
+
+// 付箋のサイズに基づいてフォントサイズを計算
+const getFontSize = (sticky) => {
+  const area = sticky.width * sticky.height
+
+  // 面積に応じてフォントサイズを調整
+  if (area <= 1) {
+    // 1x1: 極小
+    return { content: 'text-xs', title: 'text-sm' }
+  } else if (area <= 2) {
+    // 1x2, 2x1: 小
+    return { content: 'text-sm', title: 'text-base' }
+  } else if (area <= 4) {
+    // 2x2: 中
+    return { content: 'text-base', title: 'text-lg' }
+  } else if (area <= 6) {
+    // 2x3, 3x2: やや大
+    return { content: 'text-lg', title: 'text-xl' }
+  } else {
+    // 3x3以上: 大
+    return { content: 'text-xl', title: 'text-2xl' }
+  }
+}
+
+// 付箋のサイズに基づいて余白を計算
+const getPadding = (sticky) => {
+  const area = sticky.width * sticky.height
+
+  // 面積に応じて余白を調整
+  if (area <= 1) {
+    // 1x1: 最小余白
+    return {
+      header: 'p-2 pb-0.5',
+      content: 'p-2 pt-0',
+      contentHeight: 'h-[calc(100%-32px)]'
+    }
+  } else if (area <= 2) {
+    // 1x2, 2x1: 小さめ余白
+    return {
+      header: 'p-2.5 pb-1',
+      content: 'p-2.5 pt-0',
+      contentHeight: 'h-[calc(100%-38px)]'
+    }
+  } else if (area <= 4) {
+    // 2x2: 標準余白
+    return {
+      header: 'p-3 pb-1.5',
+      content: 'p-3 pt-0',
+      contentHeight: 'h-[calc(100%-44px)]'
+    }
+  } else if (area <= 6) {
+    // 2x3, 3x2: やや大きめ余白
+    return {
+      header: 'p-4 pb-2',
+      content: 'p-4 pt-0',
+      contentHeight: 'h-[calc(100%-56px)]'
+    }
+  } else {
+    // 3x3以上: 大きめ余白
+    return {
+      header: 'p-5 pb-2.5',
+      content: 'p-5 pt-0',
+      contentHeight: 'h-[calc(100%-68px)]'
+    }
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-background">
     <!-- ヘッダー -->
     <header class="border-b bg-background">
-      <div class="flex items-center justify-between px-6 py-4">
+      <div class="flex items-center justify-between px-3 py-1.5">
         <!-- 左側: アプリケーションタイトル -->
         <div class="flex items-center gap-2">
           <StickyNote class="h-6 w-6 text-secondary" />
@@ -137,8 +204,8 @@ const handleLayoutUpdated = async (newLayout) => {
     </header>
 
     <!-- 付箋一覧 -->
-    <main class="px-4 py-6">
-      <div v-if="stickyStore.stickies.length === 0" class="flex flex-col items-center justify-center py-24 text-center">
+    <main class="px-1 py-1">
+      <div v-if="stickyStore.stickies.length === 0" class="flex flex-col items-center justify-center py-8 text-center">
         <StickyNote class="h-16 w-16 text-muted-foreground/50 mb-4" />
         <h2 class="text-xl font-semibold text-foreground mb-2">
           まだ付箋がありません
@@ -168,9 +235,9 @@ const handleLayoutUpdated = async (newLayout) => {
               <Card
                 class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden"
               >
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(sticky).header)">
                   <!-- タイトル表示/編集 -->
-                  <div class="flex-1 flex items-center gap-2">
+                  <div class="flex-1 flex items-center gap-1">
                     <input
                       v-if="editingId === sticky.id"
                       :value="sticky.title"
@@ -179,17 +246,17 @@ const handleLayoutUpdated = async (newLayout) => {
                       :data-sticky-title-id="sticky.id"
                       :data-testid="`sticky-${sticky.id}-title`"
                       placeholder="タイトル"
-                      class="font-semibold bg-transparent border-b border-accent focus:border-accent p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
+                      :class="cn('font-semibold bg-transparent border-b border-accent focus:border-accent px-0.5 py-0 w-full outline-none text-foreground placeholder:text-muted-foreground', getFontSize(sticky).title)"
                     />
                     <div v-else class="flex items-center gap-2 flex-1">
-                      <span class="font-semibold text-foreground">
+                      <span :class="cn('font-semibold text-foreground truncate', getFontSize(sticky).title)">
                         {{ sticky.title || 'タイトル' }}
                       </span>
                       <Button
                         @click="startEditingTitle(sticky.id)"
                         variant="ghost"
                         size="icon"
-                        class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        class="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity p-0"
                       >
                         <Edit2 class="h-3 w-3" />
                       </Button>
@@ -202,9 +269,9 @@ const handleLayoutUpdated = async (newLayout) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        class="h-6 w-6 hover:bg-accent/10"
+                        class="h-5 w-5 hover:bg-accent/10 p-0 flex-shrink-0"
                       >
-                        <MoreVertical class="h-4 w-4" />
+                        <MoreVertical class="h-3.5 w-3.5" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -224,13 +291,13 @@ const handleLayoutUpdated = async (newLayout) => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
-                <CardContent class="h-[calc(100%-60px)]">
+                <CardContent :class="cn('overflow-hidden', getPadding(sticky).content, getPadding(sticky).contentHeight)">
                   <textarea
                     :value="sticky.content"
                     @blur="updateSticky(sticky.id, 'content', $event.target.value)"
                     :data-testid="`sticky-${sticky.id}-content`"
                     placeholder="内容を入力..."
-                    class="bg-transparent border-none focus-visible:ring-0 resize-none w-full h-full outline-none text-foreground placeholder:text-muted-foreground"
+                    :class="cn('bg-transparent border-none focus-visible:ring-0 resize-none w-full h-full outline-none text-foreground placeholder:text-muted-foreground overflow-hidden', getFontSize(sticky).content)"
                   />
                 </CardContent>
               </Card>
