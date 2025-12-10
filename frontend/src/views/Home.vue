@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { User, Plus, Edit2, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -105,6 +106,9 @@ const handleLayoutUpdated = async (newLayout) => {
           >
             <Plus class="h-5 w-5" />
           </Button>
+
+          <!-- テーマ切り替えボタン -->
+          <ThemeToggle />
 
           <!-- ユーザーメニュー -->
           <DropdownMenu>
