@@ -362,4 +362,113 @@ class Api::StickiesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, sticky2.width
     assert_equal 2, sticky2.height
   end
+
+  # Calendar (STI) tests
+  test "should create calendar with type Calendar" do
+    assert_difference('Calendar.count', 1) do
+      post api_stickies_url,
+           headers: { 'Authorization' => "Bearer #{@token}" },
+           params: {
+             sticky: {
+               type: 'Calendar',
+               title: 'My Calendar',
+               position: 2
+             }
+           },
+           as: :json
+    end
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal 'My Calendar', json_response['sticky']['title']
+    assert_equal 'Calendar', json_response['sticky']['type']
+    assert_equal @user.id, json_response['sticky']['user_id']
+  end
+
+  test "should update calendar" do
+    calendar = Calendar.create!(
+      title: 'Original Calendar',
+      position: 1,
+      user: @user
+    )
+
+    patch api_sticky_url(calendar),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              title: 'Updated Calendar',
+              x: 5,
+              y: 10
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 'Updated Calendar', json_response['sticky']['title']
+    assert_equal 'Calendar', json_response['sticky']['type']
+    assert_equal 5, json_response['sticky']['x']
+    assert_equal 10, json_response['sticky']['y']
+  end
+
+  test "should discard calendar" do
+    calendar = Calendar.create!(
+      title: 'Test Calendar',
+      position: 1,
+      user: @user
+    )
+
+    assert_no_difference('Sticky.unscoped.count') do
+      delete api_sticky_url(calendar),
+             headers: { 'Authorization' => "Bearer #{@token}" },
+             as: :json
+    end
+
+    assert_response :no_content
+    calendar.reload
+    assert calendar.discarded?
+  end
+
+  test "should include both stickies and calendars in index" do
+    calendar = Calendar.create!(
+      title: 'Test Calendar',
+      position: 2,
+      user: @user
+    )
+
+    get api_stickies_url,
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 2, json_response['stickies'].length
+
+    types = json_response['stickies'].map { |s| s['type'] }.sort
+    assert_equal ['Calendar', 'Sticky'], types
+  end
+
+  test "should reorder both stickies and calendars together" do
+    calendar = Calendar.create!(
+      title: 'Test Calendar',
+      position: 2,
+      user: @user
+    )
+
+    patch reorder_api_stickies_url,
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            stickies: [
+              { id: calendar.id, position: 1, x: 0, y: 0 },
+              { id: @sticky.id, position: 2, x: 0, y: 1 }
+            ]
+          },
+          as: :json
+
+    assert_response :ok
+    @sticky.reload
+    calendar.reload
+    assert_equal 2, @sticky.position
+    assert_equal 1, calendar.position
+  end
 end
