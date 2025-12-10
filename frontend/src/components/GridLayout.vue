@@ -94,13 +94,8 @@ const handleLayoutUpdated = (newLayout) => {
   border-radius: var(--radius);
 }
 
-:deep(.vue-grid-item > .vue-resizable-handle) {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
+:deep(.vgl-item__resizer) {
+  opacity: 0;
 }
 
 :deep(.vue-grid-item:not(.vue-grid-placeholder)) {
