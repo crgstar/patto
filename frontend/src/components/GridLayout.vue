@@ -76,29 +76,32 @@ const handleLayoutUpdated = (newLayout) => {
   </GridLayoutPlus>
 </template>
 
-<style scoped>
+<style>
 /* grid-layout-plusのスタイルを適用 */
-:deep(.vue-grid-layout) {
+.vgl-layout {
+  /* プレースホルダーの背景色を落ち着いた色に変更 */
+  --vgl-placeholder-bg: hsl(var(--muted-foreground)) !important;
+  --vgl-placeholder-opacity: 15% !important;
   background: transparent;
 }
 
-:deep(.vue-grid-item) {
+.vgl-item {
   touch-action: none;
 }
 
-:deep(.vue-grid-item.vue-grid-placeholder) {
-  background: hsl(var(--accent) / 0.2);
-  opacity: 0.3;
+.vgl-item--placeholder {
+  background: hsl(var(--muted-foreground) / 0.15) !important;
+  opacity: 1 !important;
   transition-duration: 100ms;
   z-index: 2;
   border-radius: var(--radius);
 }
 
-:deep(.vgl-item__resizer) {
+.vgl-item__resizer {
   opacity: 0;
 }
 
-:deep(.vue-grid-item:not(.vue-grid-placeholder)) {
+.vgl-item:not(.vgl-item--placeholder) {
   background: transparent;
   border: none;
 }
