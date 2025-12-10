@@ -5,9 +5,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useStickyStore } from '@/stores/sticky'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { VueDraggable } from 'vue-draggable-plus'
+import GridLayout from '@/components/GridLayout.vue'
+import StickyContextMenu from '@/components/StickyContextMenu.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,17 +52,18 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
+// 新しい付箋を作成（ヘッダーのボタン用）
 const createSticky = async () => {
-  const maxPosition = stickyStore.stickies.length > 0
-    ? Math.max(...stickyStore.stickies.map(s => s.position))
-    : 0
-
   await stickyStore.createSticky({
     type: 'Sticky',
     title: '',
-    content: '',
-    position: maxPosition + 1
+    content: ''
   })
+}
+
+// コンテキストメニューから付箋を作成（座標指定なし）
+const handleCreateStickyFromContext = async () => {
+  await createSticky()
 }
 
 const updateSticky = async (id, field, value) => {
@@ -76,14 +76,9 @@ const deleteSticky = async (id) => {
   }
 }
 
-const handleDragEnd = async () => {
-  // 現在の順番でpositionを更新
-  const reorderedStickies = stickyStore.stickies.map((sticky, index) => ({
-    ...sticky,
-    position: index + 1
-  }))
-
-  await stickyStore.reorderStickies(reorderedStickies)
+// レイアウト変更時の処理
+const handleLayoutUpdated = async (newLayout) => {
+  await stickyStore.updateLayout(newLayout)
 }
 </script>
 
@@ -131,88 +126,95 @@ const handleDragEnd = async () => {
     <!-- 付箋一覧 -->
     <main class="px-4 py-6">
       <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-muted-foreground">
-        付箋がありません
+        付箋がありません。右クリックで付箋を作成できます。
       </div>
 
-      <VueDraggable
-        v-else
-        v-model="stickyStore.stickies"
-        @end="handleDragEnd"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        :animation="200"
-      >
-        <Card
-          v-for="sticky in stickyStore.stickies"
-          :key="sticky.id"
-          class="group bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-move shadow-sm hover:shadow-md transition-shadow"
-        >
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <!-- タイトル表示/編集 -->
-            <div class="flex-1 flex items-center gap-2">
-              <input
-                v-if="editingId === sticky.id"
-                :value="sticky.title"
-                @blur="finishEditingTitle(sticky.id, $event.target.value)"
-                @keyup.enter="finishEditingTitle(sticky.id, $event.target.value)"
-                :data-sticky-title-id="sticky.id"
-                :data-testid="`sticky-${sticky.id}-title`"
-                placeholder="タイトル"
-                class="font-semibold bg-transparent border-b border-blue-300 focus:border-blue-500 p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
-              />
-              <div v-else class="flex items-center gap-2 flex-1">
-                <span class="font-semibold text-foreground">
-                  {{ sticky.title || 'タイトル' }}
-                </span>
-                <Button
-                  @click="startEditingTitle(sticky.id)"
-                  variant="ghost"
-                  size="icon"
-                  class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Edit2 class="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
+      <StickyContextMenu @create-sticky="handleCreateStickyFromContext" v-else>
+        <div class="min-h-[600px]">
+          <GridLayout
+            :layout="stickyStore.layout"
+            :col-num="12"
+            :row-height="100"
+            :is-draggable="true"
+            :is-resizable="true"
+            :vertical-compact="true"
+            :prevent-collision="false"
+            @layout-updated="handleLayoutUpdated"
+          >
+            <template #item="{ item: sticky }">
+              <Card
+                class="group bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-sm hover:shadow-md transition-shadow h-full overflow-hidden"
+              >
+                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <!-- タイトル表示/編集 -->
+                  <div class="flex-1 flex items-center gap-2">
+                    <input
+                      v-if="editingId === sticky.id"
+                      :value="sticky.title"
+                      @blur="finishEditingTitle(sticky.id, $event.target.value)"
+                      @keyup.enter="finishEditingTitle(sticky.id, $event.target.value)"
+                      :data-sticky-title-id="sticky.id"
+                      :data-testid="`sticky-${sticky.id}-title`"
+                      placeholder="タイトル"
+                      class="font-semibold bg-transparent border-b border-blue-300 focus:border-blue-500 p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
+                    />
+                    <div v-else class="flex items-center gap-2 flex-1">
+                      <span class="font-semibold text-foreground">
+                        {{ sticky.title || 'タイトル' }}
+                      </span>
+                      <Button
+                        @click="startEditingTitle(sticky.id)"
+                        variant="ghost"
+                        size="icon"
+                        class="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Edit2 class="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
 
-            <!-- オプションメニュー -->
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="h-6 w-6 hover:bg-gray-200"
-                >
-                  <MoreVertical class="h-4 w-4 text-gray-600" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem @click="startEditingTitle(sticky.id)">
-                  <Edit2 class="mr-2 h-4 w-4" />
-                  タイトルを編集
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  @click="deleteSticky(sticky.id)"
-                  :data-testid="`delete-sticky-${sticky.id}`"
-                  class="text-destructive focus:text-destructive"
-                >
-                  <Trash2 class="mr-2 h-4 w-4" />
-                  削除
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              :value="sticky.content"
-              @blur="updateSticky(sticky.id, 'content', $event.target.value)"
-              :data-testid="`sticky-${sticky.id}-content`"
-              placeholder="内容を入力..."
-              class="bg-transparent border-none focus-visible:ring-0 resize-none min-h-[100px] w-full outline-none text-foreground placeholder:text-muted-foreground"
-            />
-          </CardContent>
-        </Card>
-      </VueDraggable>
+                  <!-- オプションメニュー -->
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-6 w-6 hover:bg-gray-200"
+                      >
+                        <MoreVertical class="h-4 w-4 text-gray-600" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="startEditingTitle(sticky.id)">
+                        <Edit2 class="mr-2 h-4 w-4" />
+                        タイトルを編集
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        @click="deleteSticky(sticky.id)"
+                        :data-testid="`delete-sticky-${sticky.id}`"
+                        class="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 class="mr-2 h-4 w-4" />
+                        削除
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+                <CardContent class="h-[calc(100%-60px)]">
+                  <textarea
+                    :value="sticky.content"
+                    @blur="updateSticky(sticky.id, 'content', $event.target.value)"
+                    :data-testid="`sticky-${sticky.id}-content`"
+                    placeholder="内容を入力..."
+                    class="bg-transparent border-none focus-visible:ring-0 resize-none w-full h-full outline-none text-foreground placeholder:text-muted-foreground"
+                  />
+                </CardContent>
+              </Card>
+            </template>
+          </GridLayout>
+        </div>
+      </StickyContextMenu>
     </main>
   </div>
 </template>

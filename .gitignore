@@ -68,10 +68,13 @@ node_modules/
 # プロジェクト固有
 CLAUDE.md
 PROGRESS.md
+LEARNING.md
 .claude/
 PLAYWRIGHT_MCP_INITIAL_SETUP.md
 PLAYWRIGHT_MCP_USAGE.md
 playwright-mcp-enable.sh
 playwright-mcp-disable.sh
+context7-mcp-enable.sh
+context7-mcp-disable.sh
 docs/archive/
 .playwright-mcp/

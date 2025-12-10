@@ -1,11 +1,23 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import apiClient from '@/lib/apiClient'
 
 export const useStickyStore = defineStore('sticky', () => {
   const stickies = ref([])
   const loading = ref(false)
   const error = ref(null)
+
+  // stickiesをgrid-layout-plus形式に変換
+  const layout = computed(() => {
+    return stickies.value.map(sticky => ({
+      i: String(sticky.id),
+      x: sticky.x ?? 0,
+      y: sticky.y ?? 0,
+      w: sticky.width ?? 1,
+      h: sticky.height ?? 1,
+      sticky: sticky,
+    }))
+  })
 
   // Sticky一覧を取得
   const fetchStickies = async () => {
@@ -115,14 +127,55 @@ export const useStickyStore = defineStore('sticky', () => {
     }
   }
 
+  // レイアウト（座標）を更新
+  const updateLayout = async (newLayout) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      // grid-layout-plus形式からAPIリクエスト形式に変換
+      const updates = newLayout.map(item => ({
+        id: parseInt(item.i),
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h
+      }))
+
+      await apiClient.patch('/stickies/reorder', {
+        stickies: updates
+      })
+
+      // ローカルステートを更新
+      newLayout.forEach(item => {
+        const sticky = stickies.value.find(s => s.id === parseInt(item.i))
+        if (sticky) {
+          sticky.x = item.x
+          sticky.y = item.y
+          sticky.width = item.w
+          sticky.height = item.h
+        }
+      })
+
+      return true
+    } catch (err) {
+      error.value = err.response?.data?.error || 'レイアウトの更新に失敗しました'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     stickies,
     loading,
     error,
+    layout,
     fetchStickies,
     createSticky,
     updateSticky,
     deleteSticky,
-    reorderStickies
+    reorderStickies,
+    updateLayout
   }
 })
