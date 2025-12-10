@@ -87,11 +87,11 @@ const handleLayoutUpdated = (newLayout) => {
 }
 
 :deep(.vue-grid-item.vue-grid-placeholder) {
-  background: rgb(59 130 246 / 0.2);
+  background: hsl(var(--accent) / 0.2);
   opacity: 0.3;
   transition-duration: 100ms;
   z-index: 2;
-  border-radius: 0.5rem;
+  border-radius: var(--radius);
 }
 
 :deep(.vue-grid-item > .vue-resizable-handle) {

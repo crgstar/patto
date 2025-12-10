@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, Plus, Edit2, Trash2, MoreVertical } from 'lucide-vue-next'
+import { User, Plus, Edit2, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -86,47 +86,66 @@ const handleLayoutUpdated = async (newLayout) => {
   <div class="min-h-screen bg-background">
     <!-- ヘッダー -->
     <header class="border-b bg-background">
-      <div class="flex items-center justify-end gap-3 px-6 py-4">
-        <!-- 新しい付箋ボタン -->
-        <Button
-          @click="createSticky"
-          data-testid="create-sticky-button"
-          variant="ghost"
-          size="icon"
-          class="rounded-full bg-blue-50 hover:bg-blue-100"
-        >
-          <Plus class="h-5 w-5 text-blue-600" />
-        </Button>
+      <div class="flex items-center justify-between px-6 py-4">
+        <!-- 左側: アプリケーションタイトル -->
+        <div class="flex items-center gap-2">
+          <StickyNote class="h-6 w-6 text-secondary" />
+          <h1 class="text-xl font-bold text-foreground">Patto</h1>
+        </div>
 
-        <!-- ユーザーメニュー -->
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" class="rounded-full bg-blue-50 hover:bg-blue-100">
-              <User class="h-5 w-5 text-blue-600" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" class="w-56">
-            <DropdownMenuLabel>
-              <div class="flex flex-col space-y-1">
-                <p class="text-sm font-medium leading-none">ログインユーザー</p>
-                <p class="text-xs leading-none text-muted-foreground" v-if="authStore.user">
-                  {{ authStore.user.email }}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handleLogout">
-              ログアウト
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <!-- 右側: アクションボタン -->
+        <div class="flex items-center gap-3">
+          <!-- 新しい付箋ボタン -->
+          <Button
+            @click="createSticky"
+            data-testid="create-sticky-button"
+            variant="ghost"
+            size="icon"
+            class="rounded-full hover:bg-accent/10"
+          >
+            <Plus class="h-5 w-5" />
+          </Button>
+
+          <!-- ユーザーメニュー -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" size="icon" class="rounded-full hover:bg-accent/10">
+                <User class="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-56">
+              <DropdownMenuLabel>
+                <div class="flex flex-col space-y-1">
+                  <p class="text-sm font-medium leading-none">ログインユーザー</p>
+                  <p class="text-xs leading-none text-muted-foreground" v-if="authStore.user">
+                    {{ authStore.user.email }}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="handleLogout">
+                ログアウト
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
 
     <!-- 付箋一覧 -->
     <main class="px-4 py-6">
-      <div v-if="stickyStore.stickies.length === 0" class="text-center py-12 text-muted-foreground">
-        付箋がありません。右クリックで付箋を作成できます。
+      <div v-if="stickyStore.stickies.length === 0" class="flex flex-col items-center justify-center py-24 text-center">
+        <StickyNote class="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h2 class="text-xl font-semibold text-foreground mb-2">
+          まだ付箋がありません
+        </h2>
+        <p class="text-muted-foreground mb-6 max-w-sm">
+          右クリックまたは上部の<Plus class="inline h-4 w-4 mx-1" />ボタンで付箋を作成できます
+        </p>
+        <Button @click="createSticky" variant="secondary">
+          <Plus class="mr-2 h-4 w-4" />
+          最初の付箋を作成
+        </Button>
       </div>
 
       <StickyContextMenu @create-sticky="handleCreateStickyFromContext" v-else>
@@ -143,7 +162,7 @@ const handleLayoutUpdated = async (newLayout) => {
           >
             <template #item="{ item: sticky }">
               <Card
-                class="group bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 shadow-sm hover:shadow-md transition-shadow h-full overflow-hidden"
+                class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden"
               >
                 <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                   <!-- タイトル表示/編集 -->
@@ -156,7 +175,7 @@ const handleLayoutUpdated = async (newLayout) => {
                       :data-sticky-title-id="sticky.id"
                       :data-testid="`sticky-${sticky.id}-title`"
                       placeholder="タイトル"
-                      class="font-semibold bg-transparent border-b border-blue-300 focus:border-blue-500 p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
+                      class="font-semibold bg-transparent border-b border-accent focus:border-accent p-1 w-full outline-none text-foreground placeholder:text-muted-foreground"
                     />
                     <div v-else class="flex items-center gap-2 flex-1">
                       <span class="font-semibold text-foreground">
@@ -179,9 +198,9 @@ const handleLayoutUpdated = async (newLayout) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        class="h-6 w-6 hover:bg-gray-200"
+                        class="h-6 w-6 hover:bg-accent/10"
                       >
-                        <MoreVertical class="h-4 w-4 text-gray-600" />
+                        <MoreVertical class="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
