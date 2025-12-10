@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { User, Plus, Edit2, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
+import { User, Plus, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const router = useRouter()
@@ -248,18 +248,14 @@ const getPadding = (sticky) => {
                       placeholder="タイトル"
                       :class="cn('font-semibold bg-transparent border-b border-accent focus:border-accent px-0.5 py-0 w-full outline-none text-foreground placeholder:text-muted-foreground', getFontSize(sticky).title)"
                     />
-                    <div v-else class="flex items-center gap-2 flex-1">
-                      <span :class="cn('font-semibold text-foreground truncate', getFontSize(sticky).title)">
+                    <div
+                      v-else
+                      @click="startEditingTitle(sticky.id)"
+                      class="flex items-center gap-2 flex-1 cursor-text"
+                    >
+                      <span :class="cn('font-semibold truncate', sticky.title ? 'text-foreground' : 'text-muted-foreground', getFontSize(sticky).title)">
                         {{ sticky.title || 'タイトル' }}
                       </span>
-                      <Button
-                        @click="startEditingTitle(sticky.id)"
-                        variant="ghost"
-                        size="icon"
-                        class="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity p-0"
-                      >
-                        <Edit2 class="h-3 w-3" />
-                      </Button>
                     </div>
                   </div>
 
@@ -275,11 +271,6 @@ const getPadding = (sticky) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem @click="startEditingTitle(sticky.id)">
-                        <Edit2 class="mr-2 h-4 w-4" />
-                        タイトルを編集
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         @click="deleteSticky(sticky.id)"
                         :data-testid="`delete-sticky-${sticky.id}`"
