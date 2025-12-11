@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import GridLayout from '@/components/GridLayout.vue'
 import StickyContextMenu from '@/components/StickyContextMenu.vue'
+import Calendar from '@/components/Calendar.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,12 +69,30 @@ const handleCreateStickyFromContext = async () => {
   await createSticky()
 }
 
+// コンテキストメニューからカレンダーを作成（デフォルトで2x2の正方形）
+const handleCreateCalendarFromContext = async () => {
+  await stickyStore.createSticky({
+    type: 'Calendar',
+    title: '',
+    content: '',
+    width: 2,
+    height: 2
+  })
+}
+
 const updateSticky = async (id, field, value) => {
   await stickyStore.updateSticky(id, { [field]: value })
 }
 
 const deleteSticky = async (id) => {
   if (confirm('この付箋を削除してもよろしいですか？')) {
+    await stickyStore.deleteSticky(id)
+  }
+}
+
+// カレンダー専用のハンドラー
+const deleteCalendar = async (id) => {
+  if (confirm('このカレンダーを削除してもよろしいですか？')) {
     await stickyStore.deleteSticky(id)
   }
 }
@@ -219,7 +238,11 @@ const getPadding = (sticky) => {
         </Button>
       </div>
 
-      <StickyContextMenu @create-sticky="handleCreateStickyFromContext" v-else>
+      <StickyContextMenu
+        @create-sticky="handleCreateStickyFromContext"
+        @create-calendar="handleCreateCalendarFromContext"
+        v-else
+      >
         <div class="min-h-[600px]">
           <GridLayout
             :layout="stickyStore.layout"
@@ -232,7 +255,16 @@ const getPadding = (sticky) => {
             @layout-updated="handleLayoutUpdated"
           >
             <template #item="{ item: sticky }">
+              <!-- カレンダー付箋 -->
+              <Calendar
+                v-if="sticky.type === 'Calendar'"
+                :sticky="sticky"
+                @delete="deleteCalendar"
+              />
+
+              <!-- 通常の付箋 -->
               <Card
+                v-else
                 class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden"
               >
                 <CardHeader :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(sticky).header)">

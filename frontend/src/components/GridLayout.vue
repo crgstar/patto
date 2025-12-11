@@ -42,9 +42,64 @@ const props = defineProps({
 
 const emit = defineEmits(['update:layout', 'layout-updated'])
 
+// カレンダーのサイズを2または3に制限する関数
+const normalizeCalendarSize = (size) => {
+  // 1以下 -> 2
+  // 2 -> 2
+  // 3 -> 3
+  // 4以上 -> 3
+  if (size <= 1) return 2
+  if (size === 2) return 2
+  return 3  // 3以上は全て3
+}
+
 const handleLayoutUpdated = (newLayout) => {
-  emit('update:layout', newLayout)
-  emit('layout-updated', newLayout)
+  // カレンダーを正方形に強制（grid-layout-plusの内部更新後も保証）
+  const correctedLayout = newLayout.map(item => {
+    if (item.sticky && item.sticky.type === 'Calendar') {
+      const maxSize = Math.max(item.w, item.h)
+      const size = normalizeCalendarSize(maxSize)
+      if (item.w !== size || item.h !== size) {
+        return { ...item, w: size, h: size }
+      }
+    }
+    return item
+  })
+
+  emit('update:layout', correctedLayout)
+  emit('layout-updated', correctedLayout)
+}
+
+// リサイズ中のイベントハンドラー（カレンダーを正方形に強制）
+const handleResize = (i, newH, newW) => {
+  // リサイズされているアイテムを見つける
+  const item = props.layout.find(layoutItem => layoutItem.i === i)
+  if (!item || !item.sticky) return
+
+  // カレンダーの場合、正方形に強制
+  if (item.sticky.type === 'Calendar') {
+    // より大きい方の値に合わせて、2または3に正規化
+    const maxSize = Math.max(newW, newH)
+    const size = normalizeCalendarSize(maxSize)
+
+    // 現在のサイズと異なる場合のみ更新
+    if (item.w !== size || item.h !== size) {
+      // layoutを更新
+      const updatedLayout = props.layout.map(layoutItem => {
+        if (layoutItem.i === i) {
+          return {
+            ...layoutItem,
+            w: size,
+            h: size
+          }
+        }
+        return layoutItem
+      })
+
+      // レイアウトを更新
+      emit('update:layout', updatedLayout)
+    }
+  }
 }
 </script>
 
@@ -70,6 +125,7 @@ const handleLayoutUpdated = (newLayout) => {
       :h="item.h"
       :i="item.i"
       :static="item.static || false"
+      @resize="handleResize"
     >
       <slot name="item" :item="item.sticky" />
     </GridItem>

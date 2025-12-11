@@ -8,10 +8,14 @@ import {
 } from '@/components/ui/context-menu'
 import { StickyNote, ListTodo, Calendar } from 'lucide-vue-next'
 
-const emit = defineEmits(['create-sticky'])
+const emit = defineEmits(['create-sticky', 'create-calendar'])
 
 const handleCreateSticky = (event) => {
   emit('create-sticky', event)
+}
+
+const handleCreateCalendar = (event) => {
+  emit('create-calendar', event)
 }
 </script>
 
@@ -34,10 +38,12 @@ const handleCreateSticky = (event) => {
         <span>TODO</span>
         <span class="ml-auto text-xs text-muted-foreground">未実装</span>
       </ContextMenuItem>
-      <ContextMenuItem disabled class="cursor-not-allowed opacity-50">
+      <ContextMenuItem
+        @select="handleCreateCalendar"
+        class="cursor-pointer"
+      >
         <Calendar class="mr-2 h-4 w-4" />
         <span>カレンダー</span>
-        <span class="ml-auto text-xs text-muted-foreground">未実装</span>
       </ContextMenuItem>
     </ContextMenuContent>
   </ContextMenu>

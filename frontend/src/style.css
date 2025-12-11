@@ -66,3 +66,50 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* VCalendar グローバルスタイル - Tailwindとの統合 */
+:root {
+  --vc-gray-50: hsl(var(--card));
+  --vc-gray-100: hsl(var(--accent) / 0.1);
+  --vc-gray-200: hsl(var(--border));
+  --vc-gray-300: hsl(var(--border));
+  --vc-gray-400: hsl(var(--muted-foreground));
+  --vc-gray-500: hsl(var(--muted-foreground));
+  --vc-gray-600: hsl(var(--foreground) / 0.7);
+  --vc-gray-700: hsl(var(--foreground) / 0.8);
+  --vc-gray-800: hsl(var(--foreground) / 0.9);
+  --vc-gray-900: hsl(var(--foreground));
+  --vc-accent-50: hsl(var(--accent) / 0.1);
+  --vc-accent-100: hsl(var(--accent) / 0.2);
+  --vc-accent-200: hsl(var(--accent) / 0.3);
+  --vc-accent-300: hsl(var(--accent) / 0.4);
+  --vc-accent-400: hsl(var(--accent) / 0.6);
+  --vc-accent-500: hsl(var(--accent));
+  --vc-accent-600: hsl(var(--accent));
+  --vc-accent-700: hsl(var(--accent));
+  --vc-accent-800: hsl(var(--accent));
+  --vc-accent-900: hsl(var(--accent));
+}
+
+.dark {
+  --vc-gray-50: hsl(var(--card));
+  --vc-gray-100: hsl(var(--muted) / 0.5);
+  --vc-gray-200: hsl(var(--border));
+  --vc-gray-300: hsl(var(--border));
+  --vc-gray-400: hsl(var(--muted-foreground) / 0.6);
+  --vc-gray-500: hsl(var(--muted-foreground));
+  --vc-gray-600: hsl(var(--foreground) / 0.7);
+  --vc-gray-700: hsl(var(--foreground) / 0.8);
+  --vc-gray-800: hsl(var(--foreground) / 0.9);
+  --vc-gray-900: hsl(var(--foreground));
+  --vc-accent-50: hsl(var(--accent) / 0.1);
+  --vc-accent-100: hsl(var(--accent) / 0.2);
+  --vc-accent-200: hsl(var(--accent) / 0.3);
+  --vc-accent-300: hsl(var(--accent) / 0.4);
+  --vc-accent-400: hsl(var(--accent) / 0.6);
+  --vc-accent-500: hsl(var(--accent));
+  --vc-accent-600: hsl(var(--accent));
+  --vc-accent-700: hsl(var(--accent));
+  --vc-accent-800: hsl(var(--accent));
+  --vc-accent-900: hsl(var(--accent));
+}
