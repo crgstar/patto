@@ -10,7 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreVertical, Trash2 } from 'lucide-vue-next'
+import { useTheme } from '@/composables/useTheme'
 import 'v-calendar/style.css'
+
+const { isDark } = useTheme()
 
 const props = defineProps({
   sticky: {
@@ -98,6 +101,7 @@ const handleDelete = () => {
           :nav-visibility="calendarConfig.navVisibility"
           :borderless="calendarConfig.borderless"
           :transparent="calendarConfig.transparent"
+          :is-dark="isDark"
           class="custom-calendar"
         />
       </div>
@@ -145,28 +149,6 @@ const handleDelete = () => {
   font-size: 0.8rem;
 }
 
-/* ダークモード対応 */
-.dark :deep(.custom-calendar) {
-  color: hsl(var(--foreground));
-}
-
-.dark :deep(.custom-calendar .vc-header) {
-  color: hsl(var(--foreground));
-}
-
-.dark :deep(.custom-calendar .vc-weekday) {
-  color: hsl(var(--muted-foreground));
-}
-
-.dark :deep(.custom-calendar .vc-day-content) {
-  color: hsl(var(--foreground));
-}
-
-.dark :deep(.custom-calendar .vc-day-content:hover) {
-  background-color: hsl(var(--accent));
-}
-
-.dark :deep(.custom-calendar .vc-highlight) {
-  background-color: hsl(var(--primary));
-}
+/* v-calendarの公式ダークモード（is-dark prop）を使用 */
+/* 追加のカスタマイズが必要な場合はここに記述 */
 </style>
