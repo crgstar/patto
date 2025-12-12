@@ -16,6 +16,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { User, Plus, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
@@ -25,6 +35,9 @@ const authStore = useAuthStore()
 const stickyStore = useStickyStore()
 
 const editingId = ref(null)
+const deleteDialogOpen = ref(false)
+const deleteTargetId = ref(null)
+const deleteTargetType = ref(null) // 'sticky' or 'calendar'
 
 const startEditingTitle = (id) => {
   editingId.value = id
@@ -84,16 +97,27 @@ const updateSticky = async (id, field, value) => {
   await stickyStore.updateSticky(id, { [field]: value })
 }
 
-const deleteSticky = async (id) => {
-  if (confirm('この付箋を削除してもよろしいですか？')) {
-    await stickyStore.deleteSticky(id)
-  }
+const openDeleteDialog = (id, type) => {
+  deleteTargetId.value = id
+  deleteTargetType.value = type
+  deleteDialogOpen.value = true
+}
+
+const deleteSticky = (id) => {
+  openDeleteDialog(id, 'sticky')
 }
 
 // カレンダー専用のハンドラー
-const deleteCalendar = async (id) => {
-  if (confirm('このカレンダーを削除してもよろしいですか？')) {
-    await stickyStore.deleteSticky(id)
+const deleteCalendar = (id) => {
+  openDeleteDialog(id, 'calendar')
+}
+
+const confirmDelete = async () => {
+  if (deleteTargetId.value !== null) {
+    await stickyStore.deleteSticky(deleteTargetId.value)
+    deleteDialogOpen.value = false
+    deleteTargetId.value = null
+    deleteTargetType.value = null
   }
 }
 
@@ -329,5 +353,26 @@ const getPadding = (sticky) => {
         </div>
       </StickyContextMenu>
     </main>
+
+    <!-- 削除確認ダイアログ -->
+    <AlertDialog v-model:open="deleteDialogOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>削除の確認</AlertDialogTitle>
+          <AlertDialogDescription>
+            この{{ deleteTargetType === 'calendar' ? 'カレンダー' : '付箋' }}を削除してもよろしいですか？この操作は取り消せません。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>キャンセル</AlertDialogCancel>
+          <AlertDialogAction
+            @click="confirmDelete"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            削除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
