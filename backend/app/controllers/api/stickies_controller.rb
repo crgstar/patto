@@ -64,7 +64,7 @@ module Api
     end
 
     def sticky_response(sticky)
-      {
+      response = {
         id: sticky.id,
         type: sticky.type,
         title: sticky.title,
@@ -78,6 +78,22 @@ module Api
         created_at: sticky.created_at,
         updated_at: sticky.updated_at
       }
+
+      # Checklistの場合はchecklist_itemsを含める
+      if sticky.is_a?(Checklist)
+        response[:checklist_items] = sticky.checklist_items.map do |item|
+          {
+            id: item.id,
+            content: item.content,
+            checked: item.checked,
+            position: item.position,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          }
+        end
+      end
+
+      response
     end
   end
 end
