@@ -10,7 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_000001) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_15_100058) do
+  create_table "checklist_items", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
+    t.boolean "checked", default: false, null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.integer "position", default: 0, null: false
+    t.bigint "sticky_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["discarded_at"], name: "index_checklist_items_on_discarded_at"
+    t.index ["sticky_id", "position"], name: "index_checklist_items_on_sticky_and_position"
+    t.index ["sticky_id"], name: "index_checklist_items_on_sticky_id"
+  end
+
   create_table "stickies", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.text "content"
     t.datetime "created_at", null: false
@@ -40,5 +53,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_000001) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "checklist_items", "stickies"
   add_foreign_key "stickies", "users"
 end
