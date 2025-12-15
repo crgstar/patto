@@ -28,7 +28,9 @@
     --chart-3: 340 82% 67%;
     --chart-4: 43 96% 56%;
     --chart-5: 197 71% 73%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
+    --holiday-color: 0 84% 60%;
+    --holiday-text-color: 0 84% 50%
   }
   .dark {
     --background: 222 47% 11%;
@@ -54,7 +56,9 @@
     --chart-2: 158 64% 52%;
     --chart-3: 340 82% 67%;
     --chart-4: 43 96% 56%;
-    --chart-5: 197 71% 73%
+    --chart-5: 197 71% 73%;
+    --holiday-color: 0 63% 45%;
+    --holiday-text-color: 0 70% 60%
   }
 }
 
@@ -113,3 +117,6 @@
   --vc-accent-800: hsl(var(--accent));
   --vc-accent-900: hsl(var(--accent));
 }
+
+/* 祝日・土日用スタイル（v-calendar） */
+/* highlight は v-calendar が自動的にスタイリングするため、カスタムスタイルは不要 */

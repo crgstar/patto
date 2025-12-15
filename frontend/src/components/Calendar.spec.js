@@ -92,4 +92,51 @@ describe('Calendar', () => {
     // getScaleが1.0になっていることを確認
     expect(wrapper.vm.getScale).toBe(1.0)
   })
+
+  it('祝日attributesが定義されていること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // holidayAttributesが存在することを確認
+    expect(wrapper.vm.holidayAttributes).toBeDefined()
+  })
+
+  it('現在の年月が追跡されていること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // currentYearとcurrentMonthが存在することを確認
+    expect(wrapper.vm.currentYear).toBeDefined()
+    expect(wrapper.vm.currentMonth).toBeDefined()
+    expect(typeof wrapper.vm.currentYear).toBe('number')
+    expect(typeof wrapper.vm.currentMonth).toBe('number')
+  })
+
+  it('updatePagesメソッドが年月を正しく更新すること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // updatePages メソッドを呼び出して月を変更
+    const testPages = [{
+      year: 2025,
+      month: 5
+    }]
+
+    // 直接メソッドを呼び出して動作を確認
+    wrapper.vm.updatePages(testPages)
+
+    // updatePages が値を正しく設定することを確認
+    // （VCalendar の自動更新前に即座にチェック）
+    expect(wrapper.vm.currentYear).toBe(2025)
+    expect(wrapper.vm.currentMonth).toBe(5)
+  })
 })

@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Calendar as VCalendar } from 'v-calendar'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,9 +11,17 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MoreVertical, Trash2 } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
+import { useHolidays } from '@/composables/useHolidays'
 import 'v-calendar/style.css'
 
 const { isDark } = useTheme()
+
+// 現在表示中の年月を追跡
+const currentYear = ref(new Date().getFullYear())
+const currentMonth = ref(new Date().getMonth() + 1) // JavaScriptのDateは0-11なので+1
+
+// 祝日データを取得
+const { holidayAttributes } = useHolidays(currentYear, currentMonth)
 
 const props = defineProps({
   sticky: {
@@ -53,6 +61,14 @@ const calendarConfig = computed(() => {
 
 const handleDelete = () => {
   emit('delete', props.sticky.id)
+}
+
+// カレンダーの月が変更された時に年月を更新
+const updatePages = (pages) => {
+  if (pages && pages.length > 0) {
+    currentYear.value = pages[0].year
+    currentMonth.value = pages[0].month
+  }
 }
 </script>
 
@@ -102,6 +118,8 @@ const handleDelete = () => {
           :borderless="calendarConfig.borderless"
           :transparent="calendarConfig.transparent"
           :is-dark="isDark"
+          :attributes="holidayAttributes"
+          @update:pages="updatePages"
           class="custom-calendar"
         />
       </div>
