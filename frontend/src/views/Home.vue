@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import GridLayout from '@/components/GridLayout.vue'
 import StickyContextMenu from '@/components/StickyContextMenu.vue'
 import Calendar from '@/components/Calendar.vue'
+import Checklist from '@/components/Checklist.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,30 @@ const handleCreateCalendarFromContext = async () => {
     width: 2,
     height: 2
   })
+}
+
+// コンテキストメニューからチェックリストを作成（デフォルトで2x2の正方形）
+const handleCreateChecklistFromContext = async () => {
+  await stickyStore.createSticky({
+    type: 'Checklist',
+    title: '',
+    content: '',
+    width: 2,
+    height: 2
+  })
+}
+
+// チェックリストアイテムのハンドラー
+const handleAddChecklistItem = async (checklistId, content) => {
+  await stickyStore.createChecklistItem(checklistId, content)
+}
+
+const handleUpdateChecklistItem = async (checklistId, itemId, updates) => {
+  await stickyStore.updateChecklistItem(checklistId, itemId, updates)
+}
+
+const handleDeleteChecklistItem = async (checklistId, itemId) => {
+  await stickyStore.deleteChecklistItem(checklistId, itemId)
 }
 
 const updateSticky = async (id, field, value) => {
@@ -265,6 +290,7 @@ const getPadding = (sticky) => {
       <StickyContextMenu
         @create-sticky="handleCreateStickyFromContext"
         @create-calendar="handleCreateCalendarFromContext"
+        @create-checklist="handleCreateChecklistFromContext"
         v-else
       >
         <div class="min-h-[600px]">
@@ -278,11 +304,22 @@ const getPadding = (sticky) => {
             :prevent-collision="false"
             @layout-updated="handleLayoutUpdated"
           >
-            <template #item="{ item: sticky }">
+            <template #item="{ item }">
+              <!-- チェックリスト付箋 -->
+              <Checklist
+                v-if="item.sticky.type === 'Checklist'"
+                :checklist="item.sticky"
+                :width="item.w"
+                :height="item.h"
+                @add-item="handleAddChecklistItem(item.sticky.id, $event)"
+                @update-item="handleUpdateChecklistItem(item.sticky.id, ...arguments)"
+                @delete-item="handleDeleteChecklistItem(item.sticky.id, $event)"
+              />
+
               <!-- カレンダー付箋 -->
               <Calendar
-                v-if="sticky.type === 'Calendar'"
-                :sticky="sticky"
+                v-else-if="item.sticky.type === 'Calendar'"
+                :sticky="item.sticky"
                 @delete="deleteCalendar"
               />
 
@@ -291,26 +328,26 @@ const getPadding = (sticky) => {
                 v-else
                 class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden"
               >
-                <CardHeader :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(sticky).header)">
+                <CardHeader :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(item.sticky).header)">
                   <!-- タイトル表示/編集 -->
                   <div class="flex-1 flex items-center gap-1">
                     <input
-                      v-if="editingId === sticky.id"
-                      :value="sticky.title"
-                      @blur="finishEditingTitle(sticky.id, $event.target.value)"
-                      @keyup.enter="finishEditingTitle(sticky.id, $event.target.value)"
-                      :data-sticky-title-id="sticky.id"
-                      :data-testid="`sticky-${sticky.id}-title`"
+                      v-if="editingId === item.sticky.id"
+                      :value="item.sticky.title"
+                      @blur="finishEditingTitle(item.sticky.id, $event.target.value)"
+                      @keyup.enter="finishEditingTitle(item.sticky.id, $event.target.value)"
+                      :data-sticky-title-id="item.sticky.id"
+                      :data-testid="`sticky-${item.sticky.id}-title`"
                       placeholder="タイトル"
-                      :class="cn('font-semibold bg-transparent border-b border-accent focus:border-accent px-0.5 py-0 w-full outline-none text-foreground placeholder:text-muted-foreground', getFontSize(sticky).title)"
+                      :class="cn('font-semibold bg-transparent border-b border-accent focus:border-accent px-0.5 py-0 w-full outline-none text-foreground placeholder:text-muted-foreground', getFontSize(item.sticky).title)"
                     />
                     <div
                       v-else
-                      @click="startEditingTitle(sticky.id)"
+                      @click="startEditingTitle(item.sticky.id)"
                       class="flex items-center gap-2 flex-1 cursor-text"
                     >
-                      <span :class="cn('font-semibold truncate', sticky.title ? 'text-foreground' : 'text-muted-foreground', getFontSize(sticky).title)">
-                        {{ sticky.title || 'タイトル' }}
+                      <span :class="cn('font-semibold truncate', item.sticky.title ? 'text-foreground' : 'text-muted-foreground', getFontSize(item.sticky).title)">
+                        {{ item.sticky.title || 'タイトル' }}
                       </span>
                     </div>
                   </div>
@@ -328,8 +365,8 @@ const getPadding = (sticky) => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        @click="deleteSticky(sticky.id)"
-                        :data-testid="`delete-sticky-${sticky.id}`"
+                        @click="deleteSticky(item.sticky.id)"
+                        :data-testid="`delete-sticky-${item.sticky.id}`"
                         class="text-destructive focus:text-destructive"
                       >
                         <Trash2 class="mr-2 h-4 w-4" />
@@ -338,13 +375,13 @@ const getPadding = (sticky) => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
-                <CardContent :class="cn('overflow-hidden', getPadding(sticky).content, getPadding(sticky).contentHeight)">
+                <CardContent :class="cn('overflow-hidden', getPadding(item.sticky).content, getPadding(item.sticky).contentHeight)">
                   <textarea
-                    :value="sticky.content"
-                    @blur="updateSticky(sticky.id, 'content', $event.target.value)"
-                    :data-testid="`sticky-${sticky.id}-content`"
+                    :value="item.sticky.content"
+                    @blur="updateSticky(item.sticky.id, 'content', $event.target.value)"
+                    :data-testid="`sticky-${item.sticky.id}-content`"
                     placeholder="内容を入力..."
-                    :class="cn('bg-transparent border-none focus-visible:ring-0 resize-none w-full h-full outline-none text-foreground placeholder:text-muted-foreground overflow-hidden', getFontSize(sticky).content)"
+                    :class="cn('bg-transparent border-none focus-visible:ring-0 resize-none w-full h-full outline-none text-foreground placeholder:text-muted-foreground overflow-hidden', getFontSize(item.sticky).content)"
                   />
                 </CardContent>
               </Card>

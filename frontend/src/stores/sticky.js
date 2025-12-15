@@ -166,6 +166,88 @@ export const useStickyStore = defineStore('sticky', () => {
     }
   }
 
+  // ChecklistItemを作成
+  const createChecklistItem = async (checklistId, content) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await apiClient.post(`/stickies/${checklistId}/checklist_items`, {
+        checklist_item: {
+          content,
+          position: 0
+        }
+      })
+
+      // ローカルステートを更新
+      const checklist = stickies.value.find(s => s.id === checklistId)
+      if (checklist) {
+        if (!checklist.checklist_items) {
+          checklist.checklist_items = []
+        }
+        checklist.checklist_items.push(response.data.checklist_item)
+      }
+
+      return true
+    } catch (err) {
+      error.value = err.response?.data?.errors?.[0] || 'アイテムの作成に失敗しました'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ChecklistItemを更新
+  const updateChecklistItem = async (checklistId, itemId, updates) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await apiClient.patch(`/stickies/${checklistId}/checklist_items/${itemId}`, {
+        checklist_item: updates
+      })
+
+      // ローカルステートを更新
+      const checklist = stickies.value.find(s => s.id === checklistId)
+      if (checklist && checklist.checklist_items) {
+        const itemIndex = checklist.checklist_items.findIndex(item => item.id === itemId)
+        if (itemIndex !== -1) {
+          checklist.checklist_items[itemIndex] = response.data.checklist_item
+        }
+      }
+
+      return true
+    } catch (err) {
+      error.value = err.response?.data?.errors?.[0] || 'アイテムの更新に失敗しました'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ChecklistItemを削除（論理削除）
+  const deleteChecklistItem = async (checklistId, itemId) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      await apiClient.delete(`/stickies/${checklistId}/checklist_items/${itemId}`)
+
+      // ローカルステートを更新
+      const checklist = stickies.value.find(s => s.id === checklistId)
+      if (checklist && checklist.checklist_items) {
+        checklist.checklist_items = checklist.checklist_items.filter(item => item.id !== itemId)
+      }
+
+      return true
+    } catch (err) {
+      error.value = err.response?.data?.error || 'アイテムの削除に失敗しました'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     stickies,
     loading,
@@ -176,6 +258,9 @@ export const useStickyStore = defineStore('sticky', () => {
     updateSticky,
     deleteSticky,
     reorderStickies,
-    updateLayout
+    updateLayout,
+    createChecklistItem,
+    updateChecklistItem,
+    deleteChecklistItem
   }
 })
