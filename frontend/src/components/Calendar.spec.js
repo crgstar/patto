@@ -139,4 +139,28 @@ describe('Calendar', () => {
     expect(wrapper.vm.currentYear).toBe(2025)
     expect(wrapper.vm.currentMonth).toBe(5)
   })
+
+  it('日本語locale設定が適用されていること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // localeConfigが定義されていることを確認
+    expect(wrapper.vm.localeConfig).toBeDefined()
+    expect(wrapper.vm.localeConfig.firstDayOfWeek).toBe(0) // 日曜日始まり
+  })
+
+  it('年月表示フォーマットが日本語形式（YYYY年 M月）であること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // masksのtitleが「YYYY年 M月」形式であることを確認
+    expect(wrapper.vm.localeConfig.masks).toBeDefined()
+    expect(wrapper.vm.localeConfig.masks.title).toBe('YYYY年 M月')
+  })
 })

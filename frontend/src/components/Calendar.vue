@@ -79,6 +79,14 @@ const updatePages = (pages) => {
     currentMonth.value = pages[0].month
   }
 }
+
+// 日本語locale設定
+const localeConfig = computed(() => ({
+  firstDayOfWeek: 0, // 日曜日始まり（日本の標準的なカレンダー形式）
+  masks: {
+    title: 'YYYY年 M月' // 年月表示を「2025年 12月」形式に
+  }
+}))
 </script>
 
 <template>
@@ -128,6 +136,7 @@ const updatePages = (pages) => {
           :transparent="calendarConfig.transparent"
           :is-dark="isDark"
           :attributes="calendarAttributes"
+          :locale="localeConfig"
           @update:pages="updatePages"
           class="custom-calendar"
         />
