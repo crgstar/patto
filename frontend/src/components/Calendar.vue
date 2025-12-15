@@ -12,6 +12,7 @@ import {
 import { MoreVertical, Trash2 } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme'
 import { useHolidays } from '@/composables/useHolidays'
+import { useWeekend } from '@/composables/useWeekend'
 import 'v-calendar/style.css'
 
 const { isDark } = useTheme()
@@ -22,6 +23,14 @@ const currentMonth = ref(new Date().getMonth() + 1) // JavaScriptのDateは0-11�
 
 // 祝日データを取得
 const { holidayAttributes } = useHolidays(currentYear, currentMonth)
+
+// 土日データを取得（repeatパターンを使用するため年月指定不要）
+const { weekendAttributes } = useWeekend()
+
+// 祝日と土日の attributes を結合
+const calendarAttributes = computed(() => {
+  return [...weekendAttributes.value, ...holidayAttributes.value]
+})
 
 const props = defineProps({
   sticky: {
@@ -118,7 +127,7 @@ const updatePages = (pages) => {
           :borderless="calendarConfig.borderless"
           :transparent="calendarConfig.transparent"
           :is-dark="isDark"
-          :attributes="holidayAttributes"
+          :attributes="calendarAttributes"
           @update:pages="updatePages"
           class="custom-calendar"
         />
