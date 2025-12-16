@@ -2,8 +2,6 @@ class Sticky < ApplicationRecord
   include Discard::Model
 
   belongs_to :user
-  has_many :sticky_feed_sources, dependent: :destroy
-  has_many :feed_sources, through: :sticky_feed_sources
 
   validates :type, presence: true
   validates :user, presence: true
