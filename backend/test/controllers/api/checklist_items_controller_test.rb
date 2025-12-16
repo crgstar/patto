@@ -189,4 +189,77 @@ class Api::ChecklistItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  # Reorder tests
+  test "should reorder checklist items" do
+    item1 = @checklist.checklist_items.create!(content: 'アイテム1', position: 0)
+    item2 = @checklist.checklist_items.create!(content: 'アイテム2', position: 1)
+    item3 = @checklist.checklist_items.create!(content: 'アイテム3', position: 2)
+
+    patch reorder_api_sticky_checklist_items_url(@checklist),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            checklist_items: [
+              { id: item3.id, position: 0 },
+              { id: item1.id, position: 1 },
+              { id: item2.id, position: 2 }
+            ]
+          },
+          as: :json
+
+    assert_response :ok
+
+    item1.reload
+    item2.reload
+    item3.reload
+
+    assert_equal 1, item1.position
+    assert_equal 2, item2.position
+    assert_equal 0, item3.position
+  end
+
+  test "should not reorder checklist items without token" do
+    patch reorder_api_sticky_checklist_items_url(@checklist),
+          params: { checklist_items: [] },
+          as: :json
+
+    assert_response :unauthorized
+  end
+
+  test "should not reorder other user's checklist items" do
+    patch reorder_api_sticky_checklist_items_url(@other_checklist),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: { checklist_items: [] },
+          as: :json
+
+    assert_response :not_found
+  end
+
+  test "should not reorder with invalid item ids" do
+    patch reorder_api_sticky_checklist_items_url(@checklist),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            checklist_items: [
+              { id: 99999, position: 0 }
+            ]
+          },
+          as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "should not reorder with invalid position" do
+    item1 = @checklist.checklist_items.create!(content: 'アイテム1', position: 0)
+
+    patch reorder_api_sticky_checklist_items_url(@checklist),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            checklist_items: [
+              { id: item1.id, position: -1 }
+            ]
+          },
+          as: :json
+
+    assert_response :unprocessable_entity
+  end
 end

@@ -28,6 +28,36 @@ module Api
       head :no_content
     end
 
+    def reorder
+      checklist_items_params = params.require(:checklist_items)
+      error_occurred = false
+      error_response = nil
+
+      ActiveRecord::Base.transaction do
+        checklist_items_params.each do |item_params|
+          item = @sticky.checklist_items.find_by(id: item_params[:id])
+
+          unless item
+            error_occurred = true
+            error_response = { json: { error: 'Checklist item not found' }, status: :unprocessable_entity }
+            raise ActiveRecord::Rollback
+          end
+
+          unless item.update(position: item_params[:position])
+            error_occurred = true
+            error_response = { json: { errors: item.errors.full_messages }, status: :unprocessable_entity }
+            raise ActiveRecord::Rollback
+          end
+        end
+      end
+
+      if error_occurred
+        render error_response
+      else
+        render json: { message: 'Checklist items reordered successfully' }, status: :ok
+      end
+    end
+
     private
 
     def set_sticky

@@ -11,7 +11,11 @@ Rails.application.routes.draw do
       collection do
         patch :reorder
       end
-      resources :checklist_items, only: [:create, :update, :destroy]
+      resources :checklist_items, only: [:create, :update, :destroy] do
+        collection do
+          patch :reorder
+        end
+      end
     end
   end
 end
