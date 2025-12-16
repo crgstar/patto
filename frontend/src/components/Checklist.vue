@@ -112,30 +112,30 @@ const showProgress = computed(() => totalCount.value > 0);
     "
   >
     <!-- Header (タイトルと進捗表示) -->
-    <div v-if="showTitle || showProgress" class="p-4 border-b border-border">
+    <div v-if="showTitle || showProgress" class="px-3 pt-2 pb-1">
       <!-- タイトル -->
-      <div v-if="showTitle && checklist.title" class="mb-2">
+      <div v-if="showTitle && checklist.title" class="mb-1">
         <h3 class="text-lg font-semibold text-foreground line-clamp-1">
           {{ checklist.title }}
         </h3>
       </div>
 
       <!-- 進捗表示 -->
-      <div v-if="showProgress" class="flex items-center gap-2 text-sm">
-        <div class="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+      <div v-if="showProgress" class="flex items-center gap-1 text-[10px]">
+        <div class="flex-1 h-0.5 bg-muted rounded-full overflow-hidden">
           <div
             class="h-full bg-secondary transition-all duration-300"
             :style="{ width: `${completionPercentage}%` }"
           />
         </div>
-        <span class="text-muted-foreground min-w-[60px] text-right">
-          {{ completedCount }} / {{ totalCount }}
+        <span class="text-muted-foreground min-w-[40px] text-right">
+          {{ completedCount }}/{{ totalCount }}
         </span>
       </div>
     </div>
 
     <!-- New Item Input -->
-    <div class="p-4 border-b border-border">
+    <div class="px-3 py-2">
       <div class="flex gap-2">
         <input
           v-model="newItemContent"
@@ -157,8 +157,8 @@ const showProgress = computed(() => totalCount.value > 0);
     </div>
 
     <!-- Checklist Items -->
-    <div class="flex-1 overflow-y-auto p-2">
-      <div v-if="sortedItems.length === 0" class="p-4 text-center">
+    <div class="flex-1 overflow-y-auto px-2 py-1">
+      <div v-if="sortedItems.length === 0" class="py-4 text-center">
         <p class="text-sm text-muted-foreground">
           タスクを追加してください
         </p>

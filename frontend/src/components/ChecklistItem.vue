@@ -21,6 +21,12 @@ const handleCheckChange = (checked) => {
   emit("update", props.item.id, { checked });
 };
 
+const toggleCheck = () => {
+  if (!isEditing.value) {
+    handleCheckChange(!props.item.checked);
+  }
+};
+
 const itemElement = ref(null);
 
 const handleDragStart = (e) => {
@@ -94,7 +100,7 @@ watch(isEditing, (newVal) => {
 <template>
   <div
     ref="itemElement"
-    class="group flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors bg-card"
+    class="group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent/50 transition-colors bg-card"
   >
     <!-- Drag Handle -->
     <div
@@ -108,35 +114,42 @@ watch(isEditing, (newVal) => {
       <GripVertical class="h-4 w-4 text-muted-foreground" />
     </div>
 
-    <!-- Checkbox -->
-    <Checkbox
-      :model-value="item.checked"
-      @update:model-value="handleCheckChange"
-      class="shrink-0"
-    />
-
-    <!-- Content -->
-    <div class="flex-1 min-w-0">
-      <input
-        v-if="isEditing"
-        v-model="editContent"
-        type="text"
-        ref="editInput"
-        class="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
-        @blur="saveEdit"
-        @keydown="handleKeydown"
+    <!-- Clickable area for checkbox and content -->
+    <div 
+      class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+      @click="toggleCheck"
+    >
+      <!-- Checkbox -->
+      <Checkbox
+        :model-value="item.checked"
+        @update:model-value="handleCheckChange"
+        class="shrink-0 pointer-events-none"
       />
-      <span
-        v-else
-        :class="
-          cn(
-            'text-sm break-words',
-            item.checked && 'line-through opacity-60',
-          )
-        "
-      >
-        {{ item.content }}
-      </span>
+
+      <!-- Content -->
+      <div class="flex-1 min-w-0">
+        <input
+          v-if="isEditing"
+          v-model="editContent"
+          type="text"
+          ref="editInput"
+          class="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
+          @blur="saveEdit"
+          @keydown="handleKeydown"
+          @click.stop
+        />
+        <span
+          v-else
+          :class="
+            cn(
+              'text-sm break-words',
+              item.checked && 'line-through opacity-60',
+            )
+          "
+        >
+          {{ item.content }}
+        </span>
+      </div>
     </div>
 
     <!-- Action Buttons (visible on hover) -->
