@@ -127,7 +127,7 @@ const handleResize = (i, newH, newW) => {
       :static="item.static || false"
       @resize="handleResize"
     >
-      <slot name="item" :item="item.sticky" />
+      <slot name="item" :item="item" />
     </GridItem>
   </GridLayoutPlus>
 </template>

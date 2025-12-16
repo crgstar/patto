@@ -312,7 +312,7 @@ const getPadding = (sticky) => {
                 :width="item.w"
                 :height="item.h"
                 @add-item="handleAddChecklistItem(item.sticky.id, $event)"
-                @update-item="handleUpdateChecklistItem(item.sticky.id, ...arguments)"
+                @update-item="(itemId, updates) => handleUpdateChecklistItem(item.sticky.id, itemId, updates)"
                 @delete-item="handleDeleteChecklistItem(item.sticky.id, $event)"
               />
 

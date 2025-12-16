@@ -179,14 +179,17 @@ export const useStickyStore = defineStore('sticky', () => {
         }
       })
 
-      // ローカルステートを更新
-      const checklist = stickies.value.find(s => s.id === checklistId)
-      if (checklist) {
-        if (!checklist.checklist_items) {
-          checklist.checklist_items = []
+      // ローカルステートを更新（stickies配列全体を再作成）
+      stickies.value = stickies.value.map(s => {
+        if (s.id === checklistId) {
+          const items = s.checklist_items || []
+          return {
+            ...s,
+            checklist_items: [...items, response.data.checklist_item]
+          }
         }
-        checklist.checklist_items.push(response.data.checklist_item)
-      }
+        return s
+      })
 
       return true
     } catch (err) {
@@ -206,15 +209,20 @@ export const useStickyStore = defineStore('sticky', () => {
       const response = await apiClient.patch(`/stickies/${checklistId}/checklist_items/${itemId}`, {
         checklist_item: updates
       })
+      console.log('[Store] updateChecklistItem response:', response.data);
 
-      // ローカルステートを更新
-      const checklist = stickies.value.find(s => s.id === checklistId)
-      if (checklist && checklist.checklist_items) {
-        const itemIndex = checklist.checklist_items.findIndex(item => item.id === itemId)
-        if (itemIndex !== -1) {
-          checklist.checklist_items[itemIndex] = response.data.checklist_item
+      // ローカルステートを更新（stickies配列全体を再作成）
+      stickies.value = stickies.value.map(s => {
+        if (s.id === checklistId && s.checklist_items) {
+          return {
+            ...s,
+            checklist_items: s.checklist_items.map(item =>
+              item.id === itemId ? response.data.checklist_item : item
+            )
+          }
         }
-      }
+        return s
+      })
 
       return true
     } catch (err) {
@@ -233,11 +241,16 @@ export const useStickyStore = defineStore('sticky', () => {
     try {
       await apiClient.delete(`/stickies/${checklistId}/checklist_items/${itemId}`)
 
-      // ローカルステートを更新
-      const checklist = stickies.value.find(s => s.id === checklistId)
-      if (checklist && checklist.checklist_items) {
-        checklist.checklist_items = checklist.checklist_items.filter(item => item.id !== itemId)
-      }
+      // ローカルステートを更新（stickies配列全体を再作成）
+      stickies.value = stickies.value.map(s => {
+        if (s.id === checklistId && s.checklist_items) {
+          return {
+            ...s,
+            checklist_items: s.checklist_items.filter(item => item.id !== itemId)
+          }
+        }
+        return s
+      })
 
       return true
     } catch (err) {

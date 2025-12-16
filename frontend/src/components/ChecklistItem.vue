@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, nextTick, watch } from "vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash2 } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const emit = defineEmits(["update", "delete"]);
 
 const isEditing = ref(false);
 const editContent = ref(props.item.content);
+const editInput = ref(null);
 
 const handleCheckChange = (checked) => {
   emit("update", props.item.id, { checked });
@@ -50,6 +51,15 @@ const handleKeydown = (e) => {
     cancelEdit();
   }
 };
+
+// 編集モードになったときに入力欄にフォーカス
+watch(isEditing, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      editInput.value?.focus();
+    });
+  }
+});
 </script>
 
 <template>
@@ -58,8 +68,8 @@ const handleKeydown = (e) => {
   >
     <!-- Checkbox -->
     <Checkbox
-      :checked="item.checked"
-      @update:checked="handleCheckChange"
+      :model-value="item.checked"
+      @update:model-value="handleCheckChange"
       class="shrink-0"
     />
 
@@ -69,11 +79,10 @@ const handleKeydown = (e) => {
         v-if="isEditing"
         v-model="editContent"
         type="text"
+        ref="editInput"
         class="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
         @blur="saveEdit"
         @keydown="handleKeydown"
-        ref="editInput"
-        @vue:mounted="$refs.editInput?.focus()"
       />
       <span
         v-else

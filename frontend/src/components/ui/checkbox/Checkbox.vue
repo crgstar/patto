@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const props = defineProps({
   defaultChecked: { type: Boolean, required: false },
   checked: { type: [Boolean, String], required: false },
+  modelValue: { type: [Boolean, String], required: false },
   disabled: { type: Boolean, required: false },
   required: { type: Boolean, required: false },
   name: { type: String, required: false },
@@ -16,7 +17,7 @@ const props = defineProps({
   class: { type: null, required: false },
 });
 
-const emits = defineEmits(["update:checked"]);
+const emits = defineEmits(["update:checked", "update:modelValue"]);
 
 const forwarded = useForwardPropsEmits(props, emits);
 </script>
