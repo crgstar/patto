@@ -2,7 +2,13 @@
 import { ref, computed } from "vue";
 import ChecklistItem from "@/components/ChecklistItem.vue";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-vue-next";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, MoreVertical, Trash2 } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 
 const props = defineProps({
@@ -20,7 +26,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["add-item", "update-item", "delete-item", "reorder-items"]);
+const emit = defineEmits(["add-item", "update-item", "delete-item", "reorder-items", "delete"]);
 
 const newItemContent = ref("");
 const draggedItem = ref(null);
@@ -101,18 +107,46 @@ const handleDragEnd = (e) => {
 // サイズに応じたスタイル調整
 const showTitle = computed(() => props.height > 1);
 const showProgress = computed(() => totalCount.value > 0);
+
+const handleDelete = () => {
+  emit("delete", props.checklist.id);
+};
 </script>
 
 <template>
   <div
     :class="
       cn(
-        'h-full w-full bg-card border border-border rounded-lg shadow-sm flex flex-col overflow-hidden',
+        'h-full w-full bg-card border border-border rounded-lg shadow-sm flex flex-col overflow-hidden relative',
       )
     "
   >
+    <!-- 削除ボタン（右上に配置、常に表示） -->
+    <div class="absolute top-1 right-1 z-10">
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-5 w-5 hover:bg-accent/10 p-0 flex-shrink-0"
+          >
+            <MoreVertical class="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            @click="handleDelete"
+            data-testid="delete-checklist-button"
+            class="text-destructive focus:text-destructive"
+          >
+            <Trash2 class="mr-2 h-4 w-4" />
+            削除
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
     <!-- Header (タイトルと進捗表示) -->
-    <div v-if="showTitle || showProgress" class="px-3 pt-2 pb-1">
+    <div v-if="showTitle || showProgress" class="px-3 pt-2 pb-1 pr-8">
       <!-- タイトル -->
       <div v-if="showTitle && checklist.title" class="mb-1">
         <h3 class="text-lg font-semibold text-foreground line-clamp-1">

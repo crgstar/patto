@@ -38,7 +38,7 @@ const stickyStore = useStickyStore()
 const editingId = ref(null)
 const deleteDialogOpen = ref(false)
 const deleteTargetId = ref(null)
-const deleteTargetType = ref(null) // 'sticky' or 'calendar'
+const deleteTargetType = ref(null) // 'sticky', 'calendar', or 'checklist'
 
 const startEditingTitle = (id) => {
   editingId.value = id
@@ -139,6 +139,11 @@ const deleteSticky = (id) => {
 // カレンダー専用のハンドラー
 const deleteCalendar = (id) => {
   openDeleteDialog(id, 'calendar')
+}
+
+// チェックリスト専用のハンドラー
+const deleteChecklist = (id) => {
+  openDeleteDialog(id, 'checklist')
 }
 
 const confirmDelete = async () => {
@@ -319,6 +324,7 @@ const getPadding = (sticky) => {
                 @update-item="(itemId, updates) => handleUpdateChecklistItem(item.sticky.id, itemId, updates)"
                 @delete-item="handleDeleteChecklistItem(item.sticky.id, $event)"
                 @reorder-items="handleReorderChecklistItems(item.sticky.id, $event)"
+                @delete="deleteChecklist"
               />
 
               <!-- カレンダー付箋 -->
@@ -402,7 +408,7 @@ const getPadding = (sticky) => {
         <AlertDialogHeader>
           <AlertDialogTitle>削除の確認</AlertDialogTitle>
           <AlertDialogDescription>
-            この{{ deleteTargetType === 'calendar' ? 'カレンダー' : '付箋' }}を削除してもよろしいですか？この操作は取り消せません。
+            この{{ deleteTargetType === 'calendar' ? 'カレンダー' : deleteTargetType === 'checklist' ? 'チェックリスト' : '付箋' }}を削除してもよろしいですか？この操作は取り消せません。
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
