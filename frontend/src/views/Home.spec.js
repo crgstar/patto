@@ -33,7 +33,7 @@ vi.mock('@/components/GridLayout.vue', () => ({
     template: `
       <div class="grid-layout">
         <div v-for="item in layout" :key="item.i" class="grid-item">
-          <slot name="item" :item="item.sticky" />
+          <slot name="item" :item="item" />
         </div>
       </div>
     `

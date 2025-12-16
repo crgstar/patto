@@ -1,7 +1,7 @@
 <script setup>
 import { ref, nextTick, watch } from "vue";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash2 } from "lucide-vue-next";
+import { Pencil, Trash2, GripVertical } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 
 const props = defineProps({
@@ -11,7 +11,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update", "delete"]);
+const emit = defineEmits(["update", "delete", "drag-start", "drag-end"]);
 
 const isEditing = ref(false);
 const editContent = ref(props.item.content);
@@ -19,6 +19,35 @@ const editInput = ref(null);
 
 const handleCheckChange = (checked) => {
   emit("update", props.item.id, { checked });
+};
+
+const itemElement = ref(null);
+
+const handleDragStart = (e) => {
+  // アイテム全体をドラッグイメージとして設定
+  if (itemElement.value) {
+    // カスタムドラッグイメージを作成（より不透明に）
+    const clone = itemElement.value.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.opacity = '0.9'; // より濃く表示
+    clone.style.transform = 'rotate(2deg)'; // 少し傾ける
+    clone.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3)'; // 影を追加
+    document.body.appendChild(clone);
+    
+    const rect = itemElement.value.getBoundingClientRect();
+    e.dataTransfer.setDragImage(clone, rect.width / 2, rect.height / 2);
+    
+    // ドラッグ完了後にクローンを削除
+    setTimeout(() => {
+      document.body.removeChild(clone);
+    }, 0);
+  }
+  emit("drag-start", e);
+};
+
+const handleDragEnd = (e) => {
+  emit("drag-end", e);
 };
 
 const startEdit = () => {
@@ -64,8 +93,21 @@ watch(isEditing, (newVal) => {
 
 <template>
   <div
-    class="group flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 transition-colors"
+    ref="itemElement"
+    class="group flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors bg-card"
   >
+    <!-- Drag Handle -->
+    <div
+      class="drag-handle shrink-0 cursor-ns-resize p-1 -ml-1 hover:bg-accent/30 rounded transition-colors"
+      draggable="true"
+      @dragstart="handleDragStart"
+      @dragend="handleDragEnd"
+      @mousedown.stop
+      @click.stop
+    >
+      <GripVertical class="h-4 w-4 text-muted-foreground" />
+    </div>
+
     <!-- Checkbox -->
     <Checkbox
       :model-value="item.checked"

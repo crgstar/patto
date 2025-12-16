@@ -20,9 +20,11 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["add-item", "update-item", "delete-item"]);
+const emit = defineEmits(["add-item", "update-item", "delete-item", "reorder-items"]);
 
 const newItemContent = ref("");
+const draggedItem = ref(null);
+const draggedOverItem = ref(null);
 
 const sortedItems = computed(() => {
   if (!props.checklist.checklist_items) return [];
@@ -62,6 +64,38 @@ const handleUpdateItem = (itemId, updates) => {
 
 const handleDeleteItem = (itemId) => {
   emit("delete-item", itemId);
+};
+
+// ドラッグ&ドロップハンドラー
+const handleDragStart = (e, item) => {
+  e.stopPropagation(); // GridLayoutのドラッグと競合しないように
+  draggedItem.value = item;
+};
+
+const handleDragOver = (e, item) => {
+  e.preventDefault();
+  e.stopPropagation(); // GridLayoutのドラッグと競合しないように
+  draggedOverItem.value = item;
+};
+
+const handleDragEnd = (e) => {
+  e.stopPropagation(); // GridLayoutのドラッグと競合しないように
+  
+  if (draggedItem.value && draggedOverItem.value && draggedItem.value.id !== draggedOverItem.value.id) {
+    const items = [...sortedItems.value];
+    const draggedIndex = items.findIndex((i) => i.id === draggedItem.value.id);
+    const targetIndex = items.findIndex((i) => i.id === draggedOverItem.value.id);
+
+    // 配列を並び替え
+    const [removed] = items.splice(draggedIndex, 1);
+    items.splice(targetIndex, 0, removed);
+
+    // 並び替えをemit
+    emit("reorder-items", items);
+  }
+
+  draggedItem.value = null;
+  draggedOverItem.value = null;
 };
 
 // サイズに応じたスタイル調整
@@ -130,13 +164,24 @@ const showProgress = computed(() => totalCount.value > 0);
         </p>
       </div>
       <div v-else class="space-y-1">
-        <ChecklistItem
+        <div
           v-for="item in sortedItems"
           :key="item.id"
-          :item="item"
-          @update="handleUpdateItem"
-          @delete="handleDeleteItem"
-        />
+          @dragover="handleDragOver($event, item)"
+          :class="cn(
+            'transition-all',
+            draggedItem?.id === item.id && 'opacity-30 scale-95',
+            draggedOverItem?.id === item.id && 'border-2 border-secondary border-dashed bg-accent/20'
+          )"
+        >
+          <ChecklistItem
+            :item="item"
+            @update="handleUpdateItem"
+            @delete="handleDeleteItem"
+            @drag-start="handleDragStart($event, item)"
+            @drag-end="handleDragEnd"
+          />
+        </div>
       </div>
     </div>
   </div>

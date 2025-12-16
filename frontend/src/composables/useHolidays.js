@@ -40,7 +40,6 @@ export function useHolidays(year, month) {
       })
     })
 
-    console.log('📅 Holiday Attributes:', attributes)
     return attributes
   })
 

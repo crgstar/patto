@@ -118,6 +118,10 @@ const handleDeleteChecklistItem = async (checklistId, itemId) => {
   await stickyStore.deleteChecklistItem(checklistId, itemId)
 }
 
+const handleReorderChecklistItems = async (checklistId, items) => {
+  await stickyStore.reorderChecklistItems(checklistId, items)
+}
+
 const updateSticky = async (id, field, value) => {
   await stickyStore.updateSticky(id, { [field]: value })
 }
@@ -314,6 +318,7 @@ const getPadding = (sticky) => {
                 @add-item="handleAddChecklistItem(item.sticky.id, $event)"
                 @update-item="(itemId, updates) => handleUpdateChecklistItem(item.sticky.id, itemId, updates)"
                 @delete-item="handleDeleteChecklistItem(item.sticky.id, $event)"
+                @reorder-items="handleReorderChecklistItems(item.sticky.id, $event)"
               />
 
               <!-- カレンダー付箋 -->

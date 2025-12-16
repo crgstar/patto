@@ -209,7 +209,6 @@ export const useStickyStore = defineStore('sticky', () => {
       const response = await apiClient.patch(`/stickies/${checklistId}/checklist_items/${itemId}`, {
         checklist_item: updates
       })
-      console.log('[Store] updateChecklistItem response:', response.data);
 
       // ローカルステートを更新（stickies配列全体を再作成）
       stickies.value = stickies.value.map(s => {
@@ -261,6 +260,45 @@ export const useStickyStore = defineStore('sticky', () => {
     }
   }
 
+  // ChecklistItemを並び替え
+  const reorderChecklistItems = async (checklistId, items) => {
+    loading.value = true
+    error.value = null
+
+    try {
+      // position付きのアイテム配列を作成
+      const updates = items.map((item, index) => ({
+        id: item.id,
+        position: index
+      }))
+
+      await apiClient.patch(`/stickies/${checklistId}/checklist_items/reorder`, {
+        checklist_items: updates
+      })
+
+      // ローカルステートを更新
+      stickies.value = stickies.value.map(s => {
+        if (s.id === checklistId && s.checklist_items) {
+          return {
+            ...s,
+            checklist_items: items.map((item, index) => ({
+              ...item,
+              position: index
+            }))
+          }
+        }
+        return s
+      })
+
+      return true
+    } catch (err) {
+      error.value = err.response?.data?.error || 'チェックリストの並び替えに失敗しました'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     stickies,
     loading,
@@ -274,6 +312,7 @@ export const useStickyStore = defineStore('sticky', () => {
     updateLayout,
     createChecklistItem,
     updateChecklistItem,
-    deleteChecklistItem
+    deleteChecklistItem,
+    reorderChecklistItems
   }
 })
