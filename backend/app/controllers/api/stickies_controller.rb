@@ -11,20 +11,17 @@ module Api
 
     def create
       sticky = current_user.stickies.build(sticky_params)
-
-      if sticky.save
-        render json: { sticky: sticky_response(sticky) }, status: :created
-      else
-        render json: { errors: sticky.errors.full_messages }, status: :unprocessable_entity
-      end
+      sticky.save!
+      render json: { sticky: sticky_response(sticky) }, status: :created
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     def update
-      if @sticky.update(sticky_params)
-        render json: { sticky: sticky_response(@sticky) }, status: :ok
-      else
-        render json: { errors: @sticky.errors.full_messages }, status: :unprocessable_entity
-      end
+      @sticky.update!(sticky_params)
+      render json: { sticky: sticky_response(@sticky) }, status: :ok
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     def destroy
@@ -55,8 +52,9 @@ module Api
     private
 
     def set_sticky
-      @sticky = current_user.stickies.find_by(id: params[:id])
-      render json: { error: 'Sticky not found' }, status: :not_found unless @sticky
+      @sticky = current_user.stickies.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Sticky not found' }, status: :not_found
     end
 
     def sticky_params

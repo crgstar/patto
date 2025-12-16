@@ -7,20 +7,17 @@ module Api
 
     def create
       item = @sticky.checklist_items.build(checklist_item_params)
-
-      if item.save
-        render json: { checklist_item: item }, status: :created
-      else
-        render json: { errors: item.errors.full_messages }, status: :unprocessable_entity
-      end
+      item.save!
+      render json: { checklist_item: item }, status: :created
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     def update
-      if @checklist_item.update(checklist_item_params)
-        render json: { checklist_item: @checklist_item }, status: :ok
-      else
-        render json: { errors: @checklist_item.errors.full_messages }, status: :unprocessable_entity
-      end
+      @checklist_item.update!(checklist_item_params)
+      render json: { checklist_item: @checklist_item }, status: :ok
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     def destroy
@@ -30,44 +27,33 @@ module Api
 
     def reorder
       checklist_items_params = params.require(:checklist_items)
-      error_occurred = false
-      error_response = nil
 
       ActiveRecord::Base.transaction do
         checklist_items_params.each do |item_params|
-          item = @sticky.checklist_items.find_by(id: item_params[:id])
-
-          unless item
-            error_occurred = true
-            error_response = { json: { error: 'Checklist item not found' }, status: :unprocessable_entity }
-            raise ActiveRecord::Rollback
-          end
-
-          unless item.update(position: item_params[:position])
-            error_occurred = true
-            error_response = { json: { errors: item.errors.full_messages }, status: :unprocessable_entity }
-            raise ActiveRecord::Rollback
-          end
+          item = @sticky.checklist_items.find(item_params[:id])
+          item.update!(position: item_params[:position])
         end
       end
 
-      if error_occurred
-        render error_response
-      else
-        render json: { message: 'Checklist items reordered successfully' }, status: :ok
-      end
+      render json: { message: 'Checklist items reordered successfully' }, status: :ok
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Checklist item not found' }, status: :unprocessable_entity
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     private
 
     def set_sticky
-      @sticky = current_user.stickies.find_by(id: params[:sticky_id])
-      render json: { error: 'Sticky not found' }, status: :not_found unless @sticky
+      @sticky = current_user.stickies.find(params[:sticky_id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Sticky not found' }, status: :not_found
     end
 
     def set_checklist_item
-      @checklist_item = @sticky.checklist_items.find_by(id: params[:id])
-      render json: { error: 'Checklist item not found' }, status: :not_found unless @checklist_item
+      @checklist_item = @sticky.checklist_items.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: 'Checklist item not found' }, status: :not_found
     end
 
     def checklist_item_params
