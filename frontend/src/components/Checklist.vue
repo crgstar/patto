@@ -106,7 +106,6 @@ const handleDragEnd = (e) => {
 
 // サイズに応じたスタイル調整
 const showTitle = computed(() => props.height > 1);
-const showProgress = computed(() => totalCount.value > 0);
 
 const handleDelete = () => {
   emit("delete", props.checklist.id);
@@ -146,16 +145,16 @@ const handleDelete = () => {
       </DropdownMenu>
     </div>
     <!-- Header (タイトルと進捗表示) -->
-    <div v-if="showTitle || showProgress" class="px-3 pt-2 pb-1 pr-8">
+    <div class="px-3 pt-2 pb-0.5 pr-8">
       <!-- タイトル -->
-      <div v-if="showTitle && checklist.title" class="mb-1">
+      <div v-if="showTitle && checklist.title" class="mb-0.5">
         <h3 class="text-lg font-semibold text-foreground line-clamp-1">
           {{ checklist.title }}
         </h3>
       </div>
 
       <!-- 進捗表示 -->
-      <div v-if="showProgress" class="flex items-center gap-1 text-[10px]">
+      <div class="flex items-center gap-1 text-[10px] py-0">
         <div class="flex-1 h-0.5 bg-muted rounded-full overflow-hidden">
           <div
             class="h-full bg-secondary transition-all duration-300"
@@ -169,7 +168,7 @@ const handleDelete = () => {
     </div>
 
     <!-- New Item Input -->
-    <div class="px-3 py-2">
+    <div class="px-3 pt-0 pb-2">
       <div class="flex gap-2">
         <input
           v-model="newItemContent"
