@@ -17,13 +17,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction
 } from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { ArrowLeft, Plus, Edit, Trash2, MoreVertical } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const feedSourceStore = useFeedSourceStore()
@@ -174,89 +168,100 @@ const handleDelete = async () => {
       <div>
         <h2 class="text-xl font-semibold mb-4">登録済みフィード</h2>
 
-        <div v-if="feedSourceStore.feedSources.length === 0" class="text-center py-8">
+        <div v-if="feedSourceStore.feedSources.length === 0" class="text-center py-8 border border-border rounded-lg bg-card">
           <p class="text-muted-foreground">まだフィードが登録されていません</p>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card
-            v-for="feedSource in feedSourceStore.feedSources"
-            :key="feedSource.id"
-            class="relative"
-          >
-            <CardHeader>
-              <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                  <!-- 編集モード -->
-                  <div v-if="editingId === feedSource.id" class="space-y-2">
-                    <Input
-                      v-model="editingData.title"
-                      placeholder="タイトル"
-                    />
-                    <Textarea
-                      v-model="editingData.description"
-                      placeholder="説明"
-                      class="min-h-[60px]"
-                    />
-                    <div class="flex gap-2">
-                      <Button
-                        @click="handleUpdate(feedSource.id)"
-                        size="sm"
-                      >
-                        保存
-                      </Button>
-                      <Button
-                        @click="cancelEdit"
-                        variant="ghost"
-                        size="sm"
-                      >
-                        キャンセル
-                      </Button>
-                    </div>
-                  </div>
+        <div v-else class="border border-border rounded-lg overflow-hidden">
+          <!-- テーブルヘッダー -->
+          <div class="bg-muted/50 border-b border-border">
+            <div class="grid grid-cols-[2fr_3fr_3fr_auto] gap-4 px-4 py-2 items-center">
+              <div class="text-xs font-medium text-muted-foreground">タイトル</div>
+              <div class="text-xs font-medium text-muted-foreground">URL</div>
+              <div class="text-xs font-medium text-muted-foreground">説明</div>
+              <div class="text-xs font-medium text-muted-foreground text-center w-20">操作</div>
+            </div>
+          </div>
 
-                  <!-- 通常表示 -->
-                  <div v-else>
-                    <CardTitle class="text-lg break-words">
-                      {{ feedSource.title || 'タイトルなし' }}
-                    </CardTitle>
-                    <p class="text-xs text-muted-foreground mt-1 break-all">
-                      {{ feedSource.url }}
-                    </p>
-                    <p v-if="feedSource.description" class="text-sm text-muted-foreground mt-2 break-words">
-                      {{ feedSource.description }}
-                    </p>
-                  </div>
+          <!-- テーブルボディ -->
+          <div class="divide-y divide-border bg-card">
+            <div
+              v-for="feedSource in feedSourceStore.feedSources"
+              :key="feedSource.id"
+              class="transition-colors hover:bg-accent/5"
+            >
+              <!-- 編集モード -->
+              <div v-if="editingId === feedSource.id" class="grid grid-cols-[2fr_3fr_3fr_auto] gap-4 px-4 py-3 items-start">
+                <Input
+                  v-model="editingData.title"
+                  placeholder="タイトル"
+                  class="h-9"
+                />
+                <div class="text-xs text-muted-foreground py-2 break-all">
+                  {{ feedSource.url }}
                 </div>
-
-                <!-- アクションメニュー -->
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="h-8 w-8 flex-shrink-0"
-                    >
-                      <MoreVertical class="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="startEdit(feedSource)">
-                      <Edit class="mr-2 h-4 w-4" />
-                      編集
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      @click="openDeleteDialog(feedSource.id)"
-                      class="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 class="mr-2 h-4 w-4" />
-                      削除
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Textarea
+                  v-model="editingData.description"
+                  placeholder="説明"
+                  class="min-h-[36px] resize-none"
+                  rows="1"
+                />
+                <div class="flex gap-1 justify-center w-20">
+                  <Button
+                    @click="handleUpdate(feedSource.id)"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    title="保存"
+                  >
+                    <Edit class="h-4 w-4" />
+                  </Button>
+                  <Button
+                    @click="cancelEdit"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    title="キャンセル"
+                  >
+                    <Trash2 class="h-4 w-4 opacity-50" />
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-          </Card>
+
+              <!-- 通常表示 -->
+              <div v-else class="grid grid-cols-[2fr_3fr_3fr_auto] gap-4 px-4 py-3 items-center">
+                <div class="text-sm font-medium text-foreground truncate" :title="feedSource.title || 'タイトルなし'">
+                  {{ feedSource.title || 'タイトルなし' }}
+                </div>
+                <div class="text-xs text-muted-foreground truncate" :title="feedSource.url">
+                  {{ feedSource.url }}
+                </div>
+                <div class="text-xs text-muted-foreground truncate" :title="feedSource.description || ''">
+                  {{ feedSource.description || '-' }}
+                </div>
+                <div class="flex gap-1 justify-center w-20">
+                  <Button
+                    @click="startEdit(feedSource)"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8"
+                    title="編集"
+                  >
+                    <Edit class="h-4 w-4" />
+                  </Button>
+                  <Button
+                    @click="openDeleteDialog(feedSource.id)"
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-destructive hover:text-destructive"
+                    title="削除"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -267,7 +272,7 @@ const handleDelete = async () => {
         <AlertDialogHeader>
           <AlertDialogTitle>フィードを削除しますか?</AlertDialogTitle>
           <AlertDialogDescription>
-            このフィードを削除すると、このフィードを使用しているすべてのStickyから削除されます。この操作は取り消せません。
+            このフィードを削除すると、このフィードを使用しているすべてのフィードリーダーから削除されます。この操作は取り消せません。
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
