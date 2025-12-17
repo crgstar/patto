@@ -29,6 +29,20 @@ Rails.application.routes.draw do
           patch :reorder
         end
       end
+
+      # FeedItems用
+      resources :feed_items, only: [:index] do
+        member do
+          post :mark_as_read
+          post :mark_as_unread
+        end
+        collection do
+          post :mark_all_as_read
+        end
+      end
+
+      # フィード更新
+      post :refresh_all, to: 'feed_items#refresh_all'
     end
   end
 end
