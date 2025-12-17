@@ -17,7 +17,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction
 } from '@/components/ui/alert-dialog'
-import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Edit, Trash2, Check, X } from 'lucide-vue-next'
 
 const router = useRouter()
 const feedSourceStore = useFeedSourceStore()
@@ -211,19 +211,19 @@ const handleDelete = async () => {
                     @click="handleUpdate(feedSource.id)"
                     variant="ghost"
                     size="icon"
-                    class="h-8 w-8"
+                    class="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-500 dark:hover:text-green-400 dark:hover:bg-green-950"
                     title="保存"
                   >
-                    <Edit class="h-4 w-4" />
+                    <Check class="h-4 w-4" />
                   </Button>
                   <Button
                     @click="cancelEdit"
                     variant="ghost"
                     size="icon"
-                    class="h-8 w-8"
+                    class="h-8 w-8 text-muted-foreground hover:text-foreground"
                     title="キャンセル"
                   >
-                    <Trash2 class="h-4 w-4 opacity-50" />
+                    <X class="h-4 w-4" />
                   </Button>
                 </div>
               </div>
