@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { User, Plus, Trash2, MoreVertical, StickyNote } from 'lucide-vue-next'
+import { User, Plus, Trash2, MoreVertical, StickyNote, Settings } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const router = useRouter()
@@ -271,6 +271,10 @@ const getPadding = (sticky) => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem @click="router.push('/settings')">
+                <Settings class="mr-2 h-4 w-4" />
+                フィード設定
+              </DropdownMenuItem>
               <DropdownMenuItem @click="handleLogout">
                 ログアウト
               </DropdownMenuItem>
