@@ -8,6 +8,11 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false)
   const error = ref(null)
 
+  // ストア初期化時にトークンがあればヘッダーを設定
+  if (token.value) {
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+  }
+
   const isAuthenticated = computed(() => !!token.value)
 
   // ログイン

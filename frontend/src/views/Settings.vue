@@ -2,11 +2,18 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFeedSourceStore } from '@/stores/feedSource'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,6 +34,9 @@ const url = ref('')
 const title = ref('')
 const description = ref('')
 
+// フィード追加ダイアログ
+const addDialogOpen = ref(false)
+
 // 編集モード
 const editingId = ref(null)
 const editingData = ref({ title: '', description: '' })
@@ -39,6 +49,12 @@ onMounted(async () => {
   await feedSourceStore.fetchFeedSources()
 })
 
+const clearForm = () => {
+  url.value = ''
+  title.value = ''
+  description.value = ''
+}
+
 const handleCreate = async () => {
   const success = await feedSourceStore.createFeedSource({
     url: url.value,
@@ -47,10 +63,9 @@ const handleCreate = async () => {
   })
 
   if (success) {
-    // フォームをクリア
-    url.value = ''
-    title.value = ''
-    description.value = ''
+    // フォームをクリアしてダイアログを閉じる
+    clearForm()
+    addDialogOpen.value = false
   }
 }
 
@@ -108,65 +123,93 @@ const handleDelete = async () => {
 
     <!-- Main Content -->
     <main class="px-4 py-6 max-w-4xl mx-auto space-y-6">
-      <!-- エラー表示 -->
+      <!-- エラー表示（編集・削除時のみ） -->
       <div
-        v-if="feedSourceStore.error"
+        v-if="feedSourceStore.error && !addDialogOpen"
         class="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md border border-destructive/30"
       >
         {{ feedSourceStore.error }}
       </div>
 
-      <!-- フィード追加フォーム -->
-      <Card>
-        <CardHeader>
-          <CardTitle>新しいフィードを追加</CardTitle>
-          <CardDescription>RSSまたはAtomフィードのURLを入力してください</CardDescription>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="space-y-2">
-            <Label for="url">URL *</Label>
-            <Input
-              id="url"
-              v-model="url"
-              type="url"
-              placeholder="https://example.com/feed.xml"
-              required
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="title">タイトル（任意）</Label>
-            <Input
-              id="title"
-              v-model="title"
-              placeholder="自動取得されますが、上書きできます"
-            />
-          </div>
-
-          <div class="space-y-2">
-            <Label for="description">説明（任意）</Label>
-            <Textarea
-              id="description"
-              v-model="description"
-              placeholder="メモや説明を入力"
-              class="min-h-[80px]"
-            />
-          </div>
-
-          <Button
-            @click="handleCreate"
-            :disabled="!url || feedSourceStore.loading"
-            class="w-full"
-          >
-            <Plus class="mr-2 h-4 w-4" />
-            {{ feedSourceStore.loading ? '追加中...' : 'フィードを追加' }}
-          </Button>
-        </CardContent>
-      </Card>
-
       <!-- フィード一覧 -->
       <div>
-        <h2 class="text-xl font-semibold mb-4">登録済みフィード</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">登録済みフィード</h2>
+
+          <!-- フィード追加ダイアログ -->
+          <Dialog v-model:open="addDialogOpen" @update:open="(open) => !open && clearForm()">
+            <DialogTrigger as-child>
+              <Button>
+                <Plus class="mr-2 h-4 w-4" />
+                新しいフィードを追加
+              </Button>
+            </DialogTrigger>
+            <DialogContent class="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>新しいフィードを追加</DialogTitle>
+                <DialogDescription>
+                  RSSまたはAtomフィードのURLを入力してください
+                </DialogDescription>
+              </DialogHeader>
+
+              <!-- エラー表示（作成時のみ） -->
+              <div
+                v-if="feedSourceStore.error && addDialogOpen"
+                class="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md border border-destructive/30"
+              >
+                {{ feedSourceStore.error }}
+              </div>
+
+              <div class="space-y-4 py-4">
+                <div class="space-y-2">
+                  <Label for="url">URL *</Label>
+                  <Input
+                    id="url"
+                    v-model="url"
+                    type="url"
+                    placeholder="https://example.com/feed.xml"
+                    required
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="title">タイトル（任意）</Label>
+                  <Input
+                    id="title"
+                    v-model="title"
+                    placeholder="自動取得されますが、上書きできます"
+                  />
+                </div>
+
+                <div class="space-y-2">
+                  <Label for="description">説明（任意）</Label>
+                  <Textarea
+                    id="description"
+                    v-model="description"
+                    placeholder="メモや説明を入力"
+                    class="min-h-[80px]"
+                  />
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  @click="addDialogOpen = false"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  @click="handleCreate"
+                  :disabled="!url || feedSourceStore.loading"
+                >
+                  <Plus class="mr-2 h-4 w-4" />
+                  {{ feedSourceStore.loading ? '追加中...' : 'フィードを追加' }}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <div v-if="feedSourceStore.feedSources.length === 0" class="text-center py-8 border border-border rounded-lg bg-card">
           <p class="text-muted-foreground">まだフィードが登録されていません</p>
