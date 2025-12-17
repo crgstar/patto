@@ -14,11 +14,23 @@ class FeedSource < ApplicationRecord
   default_scope { kept }
 
   def fetch_and_save_items
-    require 'httparty'
+    # HTTPartyでフィードを取得
+    response = HTTParty.get(url)
 
-    xml = HTTParty.get(url).body
-    feed = Feedjira.parse(xml)
-    return false unless feed
+    # HTTPステータスコードを確認
+    unless response.success?
+      update(last_fetched_at: Time.current, fetch_error: "Failed to fetch feed: HTTP #{response.code}")
+      return false
+    end
+
+    # Feedjiraでパース
+    feed = Feedjira.parse(response.body)
+
+    # feed が nil またはパースできなかった場合
+    unless feed
+      update(last_fetched_at: Time.current, fetch_error: "Failed to parse feed")
+      return false
+    end
 
     update(
       title: feed.title,
@@ -39,7 +51,10 @@ class FeedSource < ApplicationRecord
     end
 
     true
-  rescue => e
+  rescue Feedjira::NoParserAvailable => e
+    update(last_fetched_at: Time.current, fetch_error: "Unsupported feed format: #{e.message}")
+    false
+  rescue StandardError => e
     update(last_fetched_at: Time.current, fetch_error: e.message)
     false
   end

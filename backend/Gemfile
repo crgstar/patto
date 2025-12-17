@@ -59,6 +59,11 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # HTTP mocking for tests
+  gem "webmock", require: false
 end
 
+# Feed parsing
 gem "feedjira", "~> 4.0"
+gem "httparty", "~> 0.21"
