@@ -5,12 +5,20 @@ import { useFeedItemStore } from '@/stores/feedItem'
 import { useFeedSourceStore } from '@/stores/feedSource'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Trash2 } from 'lucide-vue-next'
+import { MoreVertical, Trash2, RefreshCw } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const props = defineProps({
@@ -35,10 +43,79 @@ const stickyFeedSourceStore = useStickyFeedSourceStore()
 const feedItemStore = useFeedItemStore()
 const feedSourceStore = useFeedSourceStore()
 
+// State
+const selectedFeedSourceId = ref('all') // 'all' = 'すべてのフィード'
+const feedItems = ref([])
+const page = ref(0)
+const limit = ref(20)
+const hasMore = ref(true)
+const loading = ref(false)
+const refreshing = ref(false)
+
+// Computed
+const unreadCounts = computed(() => {
+  const counts = { all: 0 }
+  feedItems.value.forEach(item => {
+    if (!item.read) {
+      counts.all++
+      const feedSourceId = String(item.feed_source_id)
+      if (!counts[feedSourceId]) {
+        counts[feedSourceId] = 0
+      }
+      counts[feedSourceId]++
+    }
+  })
+  return counts
+})
+
+// Methods
+const fetchFeedItems = async () => {
+  loading.value = true
+  try {
+    const feedSourceId = selectedFeedSourceId.value === 'all' ? null : parseInt(selectedFeedSourceId.value)
+    await feedItemStore.fetchFeedItems(props.feedReader.id, {
+      offset: page.value * limit.value,
+      limit: limit.value,
+      feed_source_id: feedSourceId,
+    })
+  } catch (error) {
+    console.error('Failed to fetch feed items:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleRefresh = async () => {
+  refreshing.value = true
+  try {
+    await feedItemStore.refreshAll(props.feedReader.id)
+    page.value = 0
+    await fetchFeedItems()
+  } catch (error) {
+    console.error('Failed to refresh feed items:', error)
+  } finally {
+    refreshing.value = false
+  }
+}
+
 // 削除ハンドラー
 const handleDelete = () => {
   emit('delete', props.feedReader.id)
 }
+
+// Lifecycle
+onMounted(async () => {
+  await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
+  await fetchFeedItems()
+})
+
+// Watch
+watch(selectedFeedSourceId, () => {
+  page.value = 0
+  feedItems.value = []
+  hasMore.value = true
+  fetchFeedItems()
+})
 </script>
 
 <template>
@@ -76,7 +153,38 @@ const handleDelete = () => {
 
     <!-- ヘッダー -->
     <div class="px-3 pt-2 pb-1 pr-8">
-      <p class="text-sm text-muted-foreground">フィードリーダー</p>
+      <div class="flex items-center gap-2">
+        <!-- フィードソース選択 -->
+        <Select v-model="selectedFeedSourceId" class="flex-1">
+          <SelectTrigger class="h-7 text-xs">
+            <SelectValue placeholder="すべてのフィード" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              すべてのフィード ({{ unreadCounts.all || 0 }})
+            </SelectItem>
+            <SelectSeparator v-if="stickyFeedSourceStore.stickyFeedSources.length > 0" />
+            <SelectItem
+              v-for="sfs in stickyFeedSourceStore.stickyFeedSources"
+              :key="sfs.id"
+              :value="String(sfs.feed_source_id)"
+            >
+              {{ sfs.feed_source.title }} ({{ unreadCounts[String(sfs.feed_source_id)] || 0 }})
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        <!-- リフレッシュボタン -->
+        <Button
+          @click="handleRefresh"
+          size="icon"
+          variant="ghost"
+          class="h-7 w-7"
+          :disabled="refreshing"
+        >
+          <RefreshCw :class="cn('h-3.5 w-3.5', refreshing && 'animate-spin')" />
+        </Button>
+      </div>
     </div>
 
     <!-- コンテンツエリア（プレースホルダー） -->
