@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import Select from '../Select.vue'
-import SelectTrigger from '../SelectTrigger.vue'
-import SelectContent from '../SelectContent.vue'
-import SelectItem from '../SelectItem.vue'
-import SelectValue from '../SelectValue.vue'
+import Select from './Select.vue'
+import SelectTrigger from './SelectTrigger.vue'
+import SelectContent from './SelectContent.vue'
+import SelectItem from './SelectItem.vue'
+import SelectValue from './SelectValue.vue'
 
 describe('Select', () => {
   it('レンダリングできること', () => {

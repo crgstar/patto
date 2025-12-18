@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import Tooltip from '../Tooltip.vue'
-import TooltipTrigger from '../TooltipTrigger.vue'
-import TooltipContent from '../TooltipContent.vue'
-import TooltipProvider from '../TooltipProvider.vue'
+import Tooltip from './Tooltip.vue'
+import TooltipTrigger from './TooltipTrigger.vue'
+import TooltipContent from './TooltipContent.vue'
+import TooltipProvider from './TooltipProvider.vue'
 
 describe('Tooltip', () => {
   beforeEach(() => {

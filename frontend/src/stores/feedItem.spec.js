@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useFeedItemStore } from '../feedItem'
+import { useFeedItemStore } from './feedItem'
 import apiClient from '@/lib/apiClient'
 
 vi.mock('@/lib/apiClient')
