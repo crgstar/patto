@@ -9,6 +9,7 @@ import GridLayout from '@/components/GridLayout.vue'
 import StickyContextMenu from '@/components/StickyContextMenu.vue'
 import Calendar from '@/components/Calendar.vue'
 import Checklist from '@/components/Checklist.vue'
+import FeedReader from '@/components/FeedReader.vue'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +39,7 @@ const stickyStore = useStickyStore()
 const editingId = ref(null)
 const deleteDialogOpen = ref(false)
 const deleteTargetId = ref(null)
-const deleteTargetType = ref(null) // 'sticky', 'calendar', or 'checklist'
+const deleteTargetType = ref(null) // 'sticky', 'calendar', 'checklist', or 'feedreader'
 
 const startEditingTitle = (id) => {
   editingId.value = id
@@ -105,6 +106,17 @@ const handleCreateChecklistFromContext = async () => {
   })
 }
 
+// コンテキストメニューからフィードリーダーを作成（デフォルトで3x3）
+const handleCreateFeedReaderFromContext = async () => {
+  await stickyStore.createSticky({
+    type: 'FeedReader',
+    title: '',
+    content: '',
+    width: 3,
+    height: 3
+  })
+}
+
 // チェックリストアイテムのハンドラー
 const handleAddChecklistItem = async (checklistId, content) => {
   await stickyStore.createChecklistItem(checklistId, content)
@@ -144,6 +156,11 @@ const deleteCalendar = (id) => {
 // チェックリスト専用のハンドラー
 const deleteChecklist = (id) => {
   openDeleteDialog(id, 'checklist')
+}
+
+// フィードリーダー専用のハンドラー
+const deleteFeedReader = (id) => {
+  openDeleteDialog(id, 'feedreader')
 }
 
 const confirmDelete = async () => {
@@ -304,6 +321,7 @@ const getPadding = (sticky) => {
         @create-sticky="handleCreateStickyFromContext"
         @create-calendar="handleCreateCalendarFromContext"
         @create-checklist="handleCreateChecklistFromContext"
+        @create-feedreader="handleCreateFeedReaderFromContext"
         v-else
       >
         <div class="min-h-[600px]">
@@ -336,6 +354,15 @@ const getPadding = (sticky) => {
                 v-else-if="item.sticky.type === 'Calendar'"
                 :sticky="item.sticky"
                 @delete="deleteCalendar"
+              />
+
+              <!-- フィードリーダー付箋 -->
+              <FeedReader
+                v-else-if="item.sticky.type === 'FeedReader'"
+                :feed-reader="item.sticky"
+                :width="item.w"
+                :height="item.h"
+                @delete="deleteFeedReader"
               />
 
               <!-- 通常の付箋 -->
@@ -412,7 +439,7 @@ const getPadding = (sticky) => {
         <AlertDialogHeader>
           <AlertDialogTitle>削除の確認</AlertDialogTitle>
           <AlertDialogDescription>
-            この{{ deleteTargetType === 'calendar' ? 'カレンダー' : deleteTargetType === 'checklist' ? 'チェックリスト' : '付箋' }}を削除してもよろしいですか？この操作は取り消せません。
+            この{{ deleteTargetType === 'calendar' ? 'カレンダー' : deleteTargetType === 'checklist' ? 'チェックリスト' : deleteTargetType === 'feedreader' ? 'フィードリーダー' : '付箋' }}を削除してもよろしいですか？この操作は取り消せません。
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

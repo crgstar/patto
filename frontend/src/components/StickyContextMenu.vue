@@ -6,9 +6,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator
 } from '@/components/ui/context-menu'
-import { StickyNote, CheckSquare, Calendar } from 'lucide-vue-next'
+import { StickyNote, CheckSquare, Calendar, Rss } from 'lucide-vue-next'
 
-const emit = defineEmits(['create-sticky', 'create-checklist', 'create-calendar'])
+const emit = defineEmits(['create-sticky', 'create-checklist', 'create-calendar', 'create-feedreader'])
 
 const handleCreateSticky = (event) => {
   emit('create-sticky', event)
@@ -20,6 +20,10 @@ const handleCreateChecklist = (event) => {
 
 const handleCreateCalendar = (event) => {
   emit('create-calendar', event)
+}
+
+const handleCreateFeedReader = (event) => {
+  emit('create-feedreader', event)
 }
 </script>
 
@@ -50,6 +54,13 @@ const handleCreateCalendar = (event) => {
       >
         <Calendar class="mr-2 h-4 w-4" />
         <span>カレンダー</span>
+      </ContextMenuItem>
+      <ContextMenuItem
+        @select="handleCreateFeedReader"
+        class="cursor-pointer"
+      >
+        <Rss class="mr-2 h-4 w-4" />
+        <span>フィードリーダー</span>
       </ContextMenuItem>
     </ContextMenuContent>
   </ContextMenu>
