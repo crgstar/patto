@@ -155,4 +155,134 @@ describe('FeedReader', () => {
       expect(wrapper.vm.selectedFeedSourceId).toBe('1')
     })
   })
+
+  describe('フィードアイテム表示', () => {
+    it('フィードアイテムが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事1',
+          description: '説明文1',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        },
+        {
+          id: 2,
+          title: 'テスト記事2',
+          description: '説明文2',
+          url: 'https://example.com/2',
+          published_at: new Date().toISOString(),
+          read: true,
+          feed_source_id: 1
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // フィードアイテムが表示されることを確認
+      expect(wrapper.text()).toContain('テスト記事1')
+      expect(wrapper.text()).toContain('テスト記事2')
+    })
+
+    it('クリック時に既読化してURLを開くこと', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事1',
+          description: '説明文1',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        }
+      ]
+      feedItemStore.markAsRead = vi.fn().mockResolvedValue(true)
+
+      // window.openのモック
+      const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // アイテムをクリック
+      await wrapper.vm.handleItemClick(feedItemStore.feedItems[0])
+
+      // 既読化が呼ばれたことを確認
+      expect(feedItemStore.markAsRead).toHaveBeenCalledWith(1, 1)
+
+      // URLが開かれたことを確認
+      expect(windowOpenSpy).toHaveBeenCalledWith('https://example.com/1', '_blank')
+
+      windowOpenSpy.mockRestore()
+    })
+
+    it('未読アイテムにインジケーターが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事1',
+          description: '説明文1',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // 未読インジケーターのクラスが存在することを確認
+      const html = wrapper.html()
+      expect(html).toContain('bg-secondary')
+    })
+  })
 })
