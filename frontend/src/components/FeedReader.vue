@@ -259,50 +259,78 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
     </div>
 
     <!-- フィードアイテムリスト -->
-    <div class="flex-1 overflow-y-auto px-2 py-1">
+    <div class="flex-1 overflow-y-auto px-2 py-1 scrollbar-subtle">
       <div v-if="feedItemStore.feedItems.length === 0 && !loading" class="py-4 text-center">
         <p class="text-sm text-muted-foreground">フィードがありません</p>
       </div>
       <div v-else class="space-y-1">
-        <TooltipProvider>
-          <div
-            v-for="item in feedItemStore.feedItems"
-            :key="item.id"
-            @click="handleItemClick(item)"
-            :class="cn(
-              'p-2 rounded-md cursor-pointer transition-colors',
-              'hover:bg-accent/10',
-              !item.read && 'bg-accent/5'
-            )"
-          >
-            <div class="flex items-start gap-2">
-              <!-- 未読インジケーター -->
-              <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
-              <div v-else class="w-2 flex-shrink-0" />
+        <TooltipProvider :delay-duration="0">
+          <template v-for="item in feedItemStore.feedItems" :key="item.id">
+            <!-- descriptionがある場合: Tooltip付き -->
+            <Tooltip v-if="item.description">
+              <TooltipTrigger as-child>
+                <div
+                  @click="handleItemClick(item)"
+                  :class="cn(
+                    'p-2 rounded-md cursor-pointer transition-colors',
+                    'hover:bg-accent/10',
+                    !item.read && 'bg-accent/5'
+                  )"
+                >
+                  <div class="flex items-start gap-2">
+                    <!-- 未読インジケーター -->
+                    <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
+                    <div v-else class="w-2 flex-shrink-0" />
 
-              <div class="flex-1 min-w-0">
-                <!-- タイトル -->
-                <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
+                    <div class="flex-1 min-w-0">
+                      <!-- タイトル -->
+                      <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
 
-                <!-- 説明（Tooltip付き） -->
-                <Tooltip v-if="item.description">
-                  <TooltipTrigger as-child>
-                    <p class="text-xs text-muted-foreground line-clamp-1">
-                      {{ item.description }}
-                    </p>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p class="max-w-xs">{{ item.description }}</p>
-                  </TooltipContent>
-                </Tooltip>
+                      <!-- 説明（省略表示） -->
+                      <p class="text-xs text-muted-foreground line-clamp-1">
+                        {{ item.description }}
+                      </p>
 
-                <!-- 日付 -->
-                <p class="text-[10px] text-muted-foreground mt-0.5">
-                  {{ formatDate(item.published_at) }}
-                </p>
+                      <!-- 日付 -->
+                      <p class="text-[10px] text-muted-foreground mt-0.5">
+                        {{ formatDate(item.published_at) }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p class="max-w-xs">{{ item.description }}</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <!-- descriptionがない場合: Tooltipなし -->
+            <div
+              v-else
+              @click="handleItemClick(item)"
+              :class="cn(
+                'p-2 rounded-md cursor-pointer transition-colors',
+                'hover:bg-accent/10',
+                !item.read && 'bg-accent/5'
+              )"
+            >
+              <div class="flex items-start gap-2">
+                <!-- 未読インジケーター -->
+                <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
+                <div v-else class="w-2 flex-shrink-0" />
+
+                <div class="flex-1 min-w-0">
+                  <!-- タイトル -->
+                  <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
+
+                  <!-- 日付 -->
+                  <p class="text-[10px] text-muted-foreground mt-0.5">
+                    {{ formatDate(item.published_at) }}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </template>
         </TooltipProvider>
 
         <!-- ローディング -->

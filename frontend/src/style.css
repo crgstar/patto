@@ -120,3 +120,29 @@
 
 /* 祝日・土日用スタイル（v-calendar） */
 /* highlight は v-calendar が自動的にスタイリングするため、カスタムスタイルは不要 */
+
+/* カスタムスクロールバー - 目立たなくする */
+@layer utilities {
+  .scrollbar-subtle {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.08) transparent;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.08);
+    border-radius: 2px;
+  }
+
+  .scrollbar-subtle::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.15);
+  }
+}
