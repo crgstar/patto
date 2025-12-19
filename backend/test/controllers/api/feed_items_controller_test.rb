@@ -101,6 +101,10 @@ class Api::FeedItemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'テスト記事3', json_response['feed_items'][0]['title']
     assert_equal 'テスト記事2', json_response['feed_items'][1]['title']
     assert_equal 'テスト記事1', json_response['feed_items'][2]['title']
+
+    # feed_source情報が含まれることを確認
+    assert_not_nil json_response['feed_items'][0]['feed_source']
+    assert_equal 'example.com', json_response['feed_items'][0]['feed_source']['domain']
   end
 
   test "should not get feed items for other user's feed reader" do

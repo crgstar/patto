@@ -289,10 +289,13 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                         {{ item.description }}
                       </p>
 
-                      <!-- 日付 -->
-                      <p class="text-[10px] text-muted-foreground mt-0.5">
-                        {{ formatDate(item.published_at) }}
-                      </p>
+                      <!-- 日付とドメイン -->
+                      <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
+                        <span>{{ formatDate(item.published_at) }}</span>
+                        <span v-if="item.feed_source?.domain" class="text-muted-foreground/70">
+                          • {{ item.feed_source.domain }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -321,10 +324,13 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                   <!-- タイトル -->
                   <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
 
-                  <!-- 日付 -->
-                  <p class="text-[10px] text-muted-foreground mt-0.5">
-                    {{ formatDate(item.published_at) }}
-                  </p>
+                  <!-- 日付とドメイン -->
+                  <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
+                    <span>{{ formatDate(item.published_at) }}</span>
+                    <span v-if="item.feed_source?.domain" class="text-muted-foreground/70">
+                      • {{ item.feed_source.domain }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

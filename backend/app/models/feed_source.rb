@@ -58,4 +58,18 @@ class FeedSource < ApplicationRecord
     update(last_fetched_at: Time.current, fetch_error: e.message)
     false
   end
+
+  # URLからドメインを抽出
+  def domain
+    return '' if url.blank?
+
+    uri = URI.parse(url)
+    hostname = uri.hostname
+    return '' if hostname.blank?
+
+    # 先頭の "www." を除去
+    hostname.sub(/^www\./, '')
+  rescue URI::InvalidURIError
+    ''
+  end
 end

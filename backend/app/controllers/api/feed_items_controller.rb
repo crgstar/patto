@@ -10,7 +10,7 @@ module Api
       feed_item_ids = @feed_reader.feed_items.pluck(:id)
 
       # feed_item_idsから実際のFeedItemを取得
-      feed_items = FeedItem.where(id: feed_item_ids).includes(:user_feed_items)
+      feed_items = FeedItem.where(id: feed_item_ids).includes(:user_feed_items, :feed_source)
 
       # フィルタリング: read / unread
       if params[:filter] == 'read'
@@ -23,7 +23,8 @@ module Api
 
       # レスポンス生成（既読状態を含める）
       items_with_read_status = feed_items.order(published_at: :desc).map do |item|
-        item.as_json.merge(read: item.read_by?(current_user))
+        item.as_json(include: { feed_source: { only: [:id], methods: [:domain] } })
+            .merge(read: item.read_by?(current_user))
       end
 
       render json: { feed_items: items_with_read_status }, status: :ok
