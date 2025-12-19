@@ -24,7 +24,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Trash2, RefreshCw } from 'lucide-vue-next'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import FeedSourceManager from '@/components/FeedSourceManager.vue'
+import { MoreVertical, Trash2, RefreshCw, Settings } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const props = defineProps({
@@ -51,11 +58,13 @@ const feedSourceStore = useFeedSourceStore()
 
 // State
 const selectedFeedSourceId = ref('all') // 'all' = 'すべてのフィード'
+const previousFeedSourceId = ref('all') // Dialog開く前の値を保持
 const page = ref(0)
 const limit = ref(20)
 const hasMore = ref(true)
 const loading = ref(false)
 const refreshing = ref(false)
+const manageDialogOpen = ref(false)
 
 // Computed
 const unreadCounts = computed(() => {
@@ -142,6 +151,15 @@ const handleDelete = () => {
   emit('delete', props.feedReader.id)
 }
 
+// フィードソース更新ハンドラー
+const handleFeedSourceUpdated = async () => {
+  await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
+  manageDialogOpen.value = false
+  // フィードアイテムを再取得
+  page.value = 0
+  await fetchFeedItems()
+}
+
 // Lifecycle
 onMounted(async () => {
   await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
@@ -149,7 +167,17 @@ onMounted(async () => {
 })
 
 // Watch
-watch(selectedFeedSourceId, () => {
+watch(selectedFeedSourceId, (newValue, oldValue) => {
+  // 「フィードソースを管理...」が選択された場合
+  if (newValue === '__manage__') {
+    manageDialogOpen.value = true
+    // 元の値に戻す
+    selectedFeedSourceId.value = previousFeedSourceId.value
+    return
+  }
+
+  // 通常のフィードソース変更時
+  previousFeedSourceId.value = newValue
   page.value = 0
   hasMore.value = true
   fetchFeedItems()
@@ -207,7 +235,12 @@ watch(selectedFeedSourceId, () => {
               :key="sfs.id"
               :value="String(sfs.feed_source_id)"
             >
-              {{ sfs.feed_source.title }} ({{ unreadCounts[String(sfs.feed_source_id)] || 0 }})
+              {{ sfs.feed_source.title || sfs.feed_source.url }} ({{ unreadCounts[String(sfs.feed_source_id)] || 0 }})
+            </SelectItem>
+            <SelectSeparator />
+            <SelectItem value="__manage__">
+              <Settings class="mr-2 h-3.5 w-3.5 inline" />
+              フィードソースを管理...
             </SelectItem>
           </SelectContent>
         </Select>
@@ -278,5 +311,15 @@ watch(selectedFeedSourceId, () => {
         </div>
       </div>
     </div>
+
+    <!-- フィードソース管理Dialog -->
+    <Dialog v-model:open="manageDialogOpen">
+      <DialogContent>
+        <FeedSourceManager
+          :sticky-id="feedReader.id"
+          @updated="handleFeedSourceUpdated"
+        />
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

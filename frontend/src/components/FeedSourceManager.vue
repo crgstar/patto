@@ -74,19 +74,16 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-4">
-    <div>
-      <h3 class="text-lg font-medium">フィードソースを管理</h3>
-      <p class="text-sm text-muted-foreground">
-        このStickyに表示するフィードソースを選択してください
-      </p>
-    </div>
+    <p class="text-sm text-muted-foreground">
+      このフィードリーダーに表示するフィードを選択してください
+    </p>
 
     <div v-if="feedSourceStore.loading" class="py-4 text-center">
       <p class="text-sm text-muted-foreground">読み込み中...</p>
     </div>
 
     <div v-else-if="feedSourceStore.feedSources.length === 0" class="py-4 text-center">
-      <p class="text-sm text-muted-foreground">フィードソースがありません</p>
+      <p class="text-sm text-muted-foreground">フィードがありません</p>
     </div>
 
     <div v-else class="space-y-3">
@@ -99,7 +96,7 @@ onMounted(async () => {
           :id="`feed-source-${feedSource.id}`"
           :checked="isSelected(feedSource.id)"
           :disabled="loading"
-          @update:checked="(checked) => handleToggle(feedSource.id, checked)"
+          @update:modelValue="(checked) => handleToggle(feedSource.id, checked)"
         />
         <div class="flex-1 space-y-1">
           <Label

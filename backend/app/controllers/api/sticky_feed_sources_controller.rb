@@ -18,7 +18,9 @@ module Api
       sticky_feed_source.feed_source = feed_source
       sticky_feed_source.save!
 
-      render json: { sticky_feed_source: sticky_feed_source }, status: :created
+      # feed_sourceを含めてレスポンスを返す
+      sticky_feed_source_with_feed_source = @sticky.sticky_feed_sources.includes(:feed_source).find(sticky_feed_source.id)
+      render json: { sticky_feed_source: sticky_feed_sources_response([sticky_feed_source_with_feed_source]).first }, status: :created
     rescue ActiveRecord::RecordNotFound
       render json: { error: 'Feed source not found' }, status: :not_found
     rescue ActiveRecord::RecordInvalid => e

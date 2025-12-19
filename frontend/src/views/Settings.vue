@@ -134,7 +134,7 @@ const handleDelete = async () => {
       <!-- フィード一覧 -->
       <div>
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">登録済みフィード</h2>
+          <h2 class="text-xl font-semibold"></h2>
 
           <!-- フィード追加ダイアログ -->
           <Dialog v-model:open="addDialogOpen" @update:open="(open) => !open && clearForm()">
