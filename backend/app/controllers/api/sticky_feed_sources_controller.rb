@@ -14,9 +14,19 @@ module Api
       # ユーザーが所有するフィードソースのみ追加可能
       feed_source = current_user.feed_sources.find(params[:sticky_feed_source][:feed_source_id])
 
-      sticky_feed_source = @sticky.sticky_feed_sources.build(sticky_feed_source_params)
-      sticky_feed_source.feed_source = feed_source
-      sticky_feed_source.save!
+      # 論理削除されたレコードを含めて検索
+      sticky_feed_source = @sticky.sticky_feed_sources.with_discarded.find_by(feed_source_id: feed_source.id)
+
+      if sticky_feed_source&.discarded?
+        # 論理削除されたレコードが存在する場合は復元
+        sticky_feed_source.undiscard
+        sticky_feed_source.update!(sticky_feed_source_params.except(:feed_source_id))
+      else
+        # 新規作成
+        sticky_feed_source = @sticky.sticky_feed_sources.build(sticky_feed_source_params)
+        sticky_feed_source.feed_source = feed_source
+        sticky_feed_source.save!
+      end
 
       # feed_sourceを含めてレスポンスを返す
       sticky_feed_source_with_feed_source = @sticky.sticky_feed_sources.includes(:feed_source).find(sticky_feed_source.id)

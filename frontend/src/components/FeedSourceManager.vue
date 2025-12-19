@@ -67,7 +67,7 @@ const handleToggle = async (feedSourceId, checked) => {
 
 // 初期化
 onMounted(async () => {
-  // FeedReader.vueで既にfetchStickyFeedSourcesを呼んでいるため、ここでは呼ばない
+  await stickyFeedSourceStore.fetchStickyFeedSources(props.stickyId)
   await feedSourceStore.fetchFeedSources()
 })
 </script>

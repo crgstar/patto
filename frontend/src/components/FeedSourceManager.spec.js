@@ -104,7 +104,7 @@ describe('FeedSourceManager', () => {
 
     // フィードソースを選択
     const checkboxWrapper = wrapper.findComponent({ name: 'Checkbox' })
-    await checkboxWrapper.vm.$emit('update:checked', true)
+    await checkboxWrapper.vm.$emit('update:modelValue', true)
 
     expect(stickyFeedSourceStore.createStickyFeedSource).toHaveBeenCalledWith(1, 1)
   })
@@ -141,7 +141,7 @@ describe('FeedSourceManager', () => {
 
     // フィードソースの選択を解除
     const checkboxWrapper = wrapper.findComponent({ name: 'Checkbox' })
-    await checkboxWrapper.vm.$emit('update:checked', false)
+    await checkboxWrapper.vm.$emit('update:modelValue', false)
 
     expect(stickyFeedSourceStore.deleteStickyFeedSource).toHaveBeenCalledWith(1, 10)
   })
@@ -170,7 +170,7 @@ describe('FeedSourceManager', () => {
 
     // フィードソースを選択
     const checkboxWrapper = wrapper.findComponent({ name: 'Checkbox' })
-    await checkboxWrapper.vm.$emit('update:checked', true)
+    await checkboxWrapper.vm.$emit('update:modelValue', true)
 
     // updatedイベントが発火されることを確認
     await wrapper.vm.$nextTick()
@@ -188,6 +188,6 @@ describe('FeedSourceManager', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('フィードソースがありません')
+    expect(wrapper.text()).toContain('フィードがありません')
   })
 })
