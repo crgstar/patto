@@ -67,8 +67,8 @@ const handleToggle = async (feedSourceId, checked) => {
 
 // 初期化
 onMounted(async () => {
+  // FeedReader.vueで既にfetchStickyFeedSourcesを呼んでいるため、ここでは呼ばない
   await feedSourceStore.fetchFeedSources()
-  await stickyFeedSourceStore.fetchStickyFeedSources(props.stickyId)
 })
 </script>
 
@@ -90,13 +90,15 @@ onMounted(async () => {
       <div
         v-for="feedSource in feedSourceStore.feedSources"
         :key="feedSource.id"
-        class="flex items-start space-x-3 p-3 rounded-md border hover:bg-accent/50 transition-colors"
+        class="flex items-start space-x-3 p-3 rounded-md border hover:bg-accent/50 transition-colors cursor-pointer"
+        @click="handleToggle(feedSource.id, !isSelected(feedSource.id))"
       >
         <Checkbox
           :id="`feed-source-${feedSource.id}`"
-          :checked="isSelected(feedSource.id)"
+          :model-value="isSelected(feedSource.id)"
           :disabled="loading"
           @update:modelValue="(checked) => handleToggle(feedSource.id, checked)"
+          @click.stop
         />
         <div class="flex-1 space-y-1">
           <Label

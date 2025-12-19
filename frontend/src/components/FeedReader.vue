@@ -154,7 +154,6 @@ const handleDelete = () => {
 // フィードソース更新ハンドラー
 const handleFeedSourceUpdated = async () => {
   await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
-  manageDialogOpen.value = false
   // フィードアイテムを再取得
   page.value = 0
   await fetchFeedItems()
@@ -168,7 +167,6 @@ onMounted(async () => {
 
 // Watch
 watch(selectedFeedSourceId, (newValue, oldValue) => {
-  // 「フィードソースを管理...」が選択された場合
   if (newValue === '__manage__') {
     manageDialogOpen.value = true
     // 元の値に戻す
@@ -240,7 +238,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
             <SelectSeparator />
             <SelectItem value="__manage__">
               <Settings class="mr-2 h-3.5 w-3.5 inline" />
-              フィードソースを管理...
+              フィードを管理
             </SelectItem>
           </SelectContent>
         </Select>
