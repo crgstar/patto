@@ -10,8 +10,19 @@ module Api
     end
 
     def create
-      feed_source = current_user.feed_sources.build(feed_source_params)
-      feed_source.save!
+      # 論理削除されたレコードを含めて検索
+      feed_source = current_user.feed_sources.with_discarded.find_by(url: feed_source_params[:url])
+
+      if feed_source&.discarded?
+        # 論理削除されたレコードが存在する場合は復元
+        feed_source.undiscard
+        feed_source.update!(feed_source_params)
+      else
+        # 新規作成
+        feed_source = current_user.feed_sources.build(feed_source_params)
+        feed_source.save!
+      end
+
       render json: { feed_source: feed_source }, status: :created
     rescue ActiveRecord::RecordInvalid => e
       render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity

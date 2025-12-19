@@ -192,5 +192,52 @@ module Api
       json = JSON.parse(response.body)
       assert_includes json['error'], 'Failed to refresh feed'
     end
+
+    # 削除済みフィードソースの再登録テスト
+    test "削除済みフィードソースを再登録できること" do
+      @feed_source.discard
+      assert @feed_source.discarded?
+
+      assert_no_difference '@user.feed_sources.with_discarded.count' do
+        post api_feed_sources_path,
+             params: { feed_source: { url: @feed_source.url, title: 'Restored Feed' } },
+             headers: @headers
+      end
+
+      assert_response :created
+      json = JSON.parse(response.body)
+      assert_equal 'Restored Feed', json['feed_source']['title']
+
+      @feed_source.reload
+      assert_not @feed_source.discarded?
+    end
+
+    test "削除済みフィードソースを再登録時にパラメータが更新されること" do
+      @feed_source.update!(title: 'Original', description: 'Original Description')
+      @feed_source.discard
+
+      post api_feed_sources_path,
+           params: { feed_source: { url: @feed_source.url, title: 'New Title', description: 'New Description' } },
+           headers: @headers
+
+      assert_response :created
+
+      @feed_source.reload
+      assert_not @feed_source.discarded?
+      assert_equal 'New Title', @feed_source.title
+      assert_equal 'New Description', @feed_source.description
+    end
+
+    test "削除済みでないフィードソースは重複登録できないこと" do
+      assert_no_difference '@user.feed_sources.count' do
+        post api_feed_sources_path,
+             params: { feed_source: { url: @feed_source.url } },
+             headers: @headers
+      end
+
+      assert_response :unprocessable_entity
+      json = JSON.parse(response.body)
+      assert_includes json['errors'].join, 'has already been taken'
+    end
   end
 end
