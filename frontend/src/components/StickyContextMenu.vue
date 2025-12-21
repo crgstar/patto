@@ -38,9 +38,8 @@ const handleCreateFeedReader = (event) => {
         class="cursor-pointer"
       >
         <StickyNote class="mr-2 h-4 w-4" />
-        <span>付箋を作成</span>
+        <span>テキスト</span>
       </ContextMenuItem>
-      <ContextMenuSeparator />
       <ContextMenuItem
         @select="handleCreateChecklist"
         class="cursor-pointer"
