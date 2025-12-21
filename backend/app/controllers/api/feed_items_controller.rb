@@ -12,6 +12,11 @@ module Api
       # feed_item_idsから実際のFeedItemを取得
       feed_items = FeedItem.where(id: feed_item_ids).includes(:user_feed_items, :feed_source)
 
+      # フィルタリング: feed_source_id
+      if params[:feed_source_id].present?
+        feed_items = feed_items.where(feed_source_id: params[:feed_source_id])
+      end
+
       # フィルタリング: read / unread
       if params[:filter] == 'read'
         feed_items = feed_items.joins(:user_feed_items)

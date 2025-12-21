@@ -283,4 +283,112 @@ class Api::FeedItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  # Feed source filtering tests
+  test "should filter feed items by feed_source_id" do
+    # 別のフィードソースを作成
+    @feed_source2 = FeedSource.create!(
+      url: 'https://example2.com/feed.rss',
+      title: 'テストフィード2',
+      user: @user
+    )
+
+    # feed_readerに追加
+    StickyFeedSource.create!(
+      sticky: @feed_reader,
+      feed_source: @feed_source2,
+      position: 1
+    )
+
+    # feed_source2に紐づくアイテムを作成
+    @feed_item_source2 = FeedItem.create!(
+      feed_source: @feed_source2,
+      guid: 'item-source2-1',
+      title: 'フィード2の記事',
+      url: 'https://example2.com/article1',
+      description: 'フィード2の記事説明',
+      published_at: Time.current
+    )
+
+    # feed_source_idでフィルタ
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: @feed_source.id),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+
+    # @feed_sourceのアイテムのみが返される
+    assert_equal 3, json_response['feed_items'].length
+    json_response['feed_items'].each do |item|
+      assert_equal @feed_source.id, item['feed_source']['id']
+    end
+  end
+
+  test "should combine feed_source_id filter with read/unread filter" do
+    # 別のフィードソースを作成
+    @feed_source2 = FeedSource.create!(
+      url: 'https://example3.com/feed.rss',
+      title: 'テストフィード3',
+      user: @user
+    )
+
+    StickyFeedSource.create!(
+      sticky: @feed_reader,
+      feed_source: @feed_source2,
+      position: 1
+    )
+
+    @feed_item_source2 = FeedItem.create!(
+      feed_source: @feed_source2,
+      guid: 'item-source2-2',
+      title: 'フィード3の記事',
+      url: 'https://example3.com/article1',
+      description: 'フィード3の記事説明',
+      published_at: Time.current
+    )
+
+    # feed_source1のアイテムを1つ既読にする
+    @feed_item1.mark_as_read_by(@user)
+
+    # feed_source_idとunreadフィルタを併用
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: @feed_source.id, filter: 'unread'),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+
+    # @feed_sourceの未読アイテムのみが返される（2件）
+    assert_equal 2, json_response['feed_items'].length
+    json_response['feed_items'].each do |item|
+      assert_equal @feed_source.id, item['feed_source']['id']
+      assert_equal false, item['read']
+    end
+
+    # 既読アイテムは含まれない
+    assert_not_includes json_response['feed_items'].map { |i| i['id'] }, @feed_item1.id
+  end
+
+  test "should return empty array for non-existent feed_source_id" do
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: 99999),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 0, json_response['feed_items'].length
+  end
+
+  test "should not return feed items for other user's feed_source" do
+    # 他のユーザーのfeed_source_idでフィルタ
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: @other_feed_source.id),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    # FeedReaderに紐づいていないので0件
+    assert_equal 0, json_response['feed_items'].length
+  end
 end
