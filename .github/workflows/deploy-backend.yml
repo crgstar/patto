@@ -1,0 +1,128 @@
+# Deploy Backend with Kamal
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  RUBY_VERSION: '3.2.0'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: patto_test
+          MYSQL_USER: patto_user
+          MYSQL_PASSWORD: patto_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+          working-directory: ./backend
+
+      - name: Setup database
+        working-directory: ./backend
+        env:
+          RAILS_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_USERNAME: patto_user
+          DB_PASSWORD: patto_password
+        run: |
+          bin/rails db:create
+          bin/rails db:schema:load
+
+      - name: Run tests
+        working-directory: ./backend
+        env:
+          RAILS_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_USERNAME: patto_user
+          DB_PASSWORD: patto_password
+        run: bin/rails test
+
+      - name: Run security audit
+        working-directory: ./backend
+        run: |
+          bundle exec brakeman --no-pager
+          bundle exec bundler-audit check --update
+
+  deploy:
+    name: Deploy with Kamal
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
+          working-directory: ./backend
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Deploy with Kamal
+        working-directory: ./backend
+        env:
+          KAMAL_REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          BACKEND_DATABASE_PASSWORD: ${{ secrets.BACKEND_DATABASE_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+        run: |
+          gem install kamal
+          kamal deploy
+
+      - name: Notify deployment status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}' === 'success' ? ':white_check_mark:' : ':x:';
+            const message = `${status} Backend deployment ${{ job.status }}`;
+            console.log(message);

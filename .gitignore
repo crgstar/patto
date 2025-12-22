@@ -52,6 +52,10 @@ backend/storage/*
 backend/config/*.key
 backend/vendor/
 
+# Kamal deployment secrets
+backend/.kamal/secrets
+!backend/.kamal/secrets.example
+
 # フロントエンド（Vue.js/Vite）
 frontend/node_modules/
 frontend/dist/
