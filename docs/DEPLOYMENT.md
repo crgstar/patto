@@ -152,7 +152,26 @@ docker --version
 # Docker version 27.x.x が表示されればOK
 ```
 
-## 3.2 ファイアウォール設定
+## 3.2 デプロイ専用ユーザー作成
+
+セキュリティのため、root ではなく専用ユーザーでデプロイします。
+
+```bash
+# deploy ユーザー作成
+adduser deploy --disabled-password --gecos ""
+
+# SSH キー設定（root と同じ鍵を使用）
+mkdir -p /home/deploy/.ssh
+cp ~/.ssh/authorized_keys /home/deploy/.ssh/
+chown -R deploy:deploy /home/deploy/.ssh
+chmod 700 /home/deploy/.ssh
+chmod 600 /home/deploy/.ssh/authorized_keys
+
+# Docker グループに追加（sudo なしで docker 実行可能に）
+usermod -aG docker deploy
+```
+
+## 3.3 ファイアウォール設定
 
 ```bash
 # ufw 有効化
@@ -165,11 +184,24 @@ ufw enable
 ufw status
 ```
 
-## 3.3 サーバーから exit
+## 3.4 接続確認
+
+サーバーから exit して、deploy ユーザーで接続確認：
 
 ```bash
 exit
+
+# deploy ユーザーで接続テスト
+ssh deploy@YOUR_SERVER_IP
+
+# Docker が使えることを確認
+docker ps
+
+# 確認できたら exit
+exit
 ```
+
+**これ以降は `deploy` ユーザーで接続します。**
 
 ---
 
@@ -424,13 +456,15 @@ GitHub → リポジトリ → **Settings** → **Secrets and variables** → **
 |------|-------|
 | `DOCKERHUB_USERNAME` | Docker Hub ユーザー名 |
 | `DOCKERHUB_TOKEN` | Docker Hub アクセストークン |
-| `SSH_PRIVATE_KEY` | SSH秘密鍵の内容 (`cat ~/.ssh/id_ed25519`) |
+| `SSH_PRIVATE_KEY` | deploy ユーザー用 SSH 秘密鍵 (`cat ~/.ssh/id_ed25519`) |
 | `SERVER_IP` | ConoHa VPS の IP |
 | `RAILS_MASTER_KEY` | Rails Master Key |
 | `BACKEND_DATABASE_PASSWORD` | DB パスワード |
 | `MYSQL_ROOT_PASSWORD` | MySQL root パスワード |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
+
+**注意**: `SSH_PRIVATE_KEY` は deploy ユーザーでサーバーに接続できる秘密鍵です。
 
 ### Variables（公開情報）
 
@@ -518,10 +552,10 @@ kamal accessory exec mysql 'mysqldump -u backend -p backend_production' > backup
 ## 自動バックアップ（サーバー上で設定）
 
 ```bash
-ssh root@YOUR_SERVER_IP
+ssh deploy@YOUR_SERVER_IP
 
 # バックアップディレクトリ作成
-mkdir -p /backups/mysql
+mkdir -p ~/backups/mysql
 
 # cron 設定
 crontab -e
@@ -530,9 +564,9 @@ crontab -e
 以下を追加（毎日3時にバックアップ）：
 
 ```cron
-0 3 * * * docker exec patto-mysql mysqldump -u backend -pYOUR_DB_PASSWORD backend_production | gzip > /backups/mysql/$(date +\%Y\%m\%d).sql.gz
+0 3 * * * docker exec patto-mysql mysqldump -u backend -pYOUR_DB_PASSWORD backend_production | gzip > ~/backups/mysql/$(date +\%Y\%m\%d).sql.gz
 # 7日より古いバックアップを削除
-0 4 * * * find /backups/mysql -mtime +7 -delete
+0 4 * * * find ~/backups/mysql -mtime +7 -delete
 ```
 
 ---
@@ -554,7 +588,7 @@ docker build -t test .
 
 ```bash
 # Traefik ログ確認
-ssh root@YOUR_SERVER_IP
+ssh deploy@YOUR_SERVER_IP
 docker logs traefik
 
 # DNS 設定を確認
@@ -565,7 +599,7 @@ docker logs traefik
 
 ```bash
 # サーバーで確認
-ssh root@YOUR_SERVER_IP
+ssh deploy@YOUR_SERVER_IP
 docker ps -a
 docker logs patto-web
 ```
