@@ -169,6 +169,10 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 
 # Docker グループに追加（sudo なしで docker 実行可能に）
 usermod -aG docker deploy
+
+# MySQLデータ用ディレクトリを作成（Kamal用）
+mkdir -p /home/deploy/patto-mysql/mysql_data
+chown -R deploy:deploy /home/deploy/patto-mysql
 ```
 
 ## 3.3 ファイアウォール設定
@@ -353,35 +357,22 @@ ssh-keyscan -H YOUR_SERVER_IP >> ~/.ssh/known_hosts
 **Docker ログインエラー:**
 → Docker Hub トークンを確認
 
-## 7.3 データベース作成
+## 7.3 マイグレーション確認（初回は自動実行済み）
 
-デプロイ完了後、追加DBを作成：
+初回デプロイ時は `db:prepare` が自動実行されますが、確認のため：
 
 ```bash
-# MySQL に接続
-kamal accessory exec mysql --interactive 'mysql -u root -p'
+# マイグレーション状態を確認
+kamal app exec 'bin/rails db:migrate:status'
 ```
 
-パスワード入力後、以下のSQLを実行：
-
-```sql
-CREATE DATABASE backend_production_cache;
-CREATE DATABASE backend_production_queue;
-CREATE DATABASE backend_production_cable;
-GRANT ALL PRIVILEGES ON backend_production_cache.* TO 'backend'@'%';
-GRANT ALL PRIVILEGES ON backend_production_queue.* TO 'backend'@'%';
-GRANT ALL PRIVILEGES ON backend_production_cable.* TO 'backend'@'%';
-FLUSH PRIVILEGES;
-exit;
-```
-
-## 7.4 マイグレーション
+2回目以降のデプロイでマイグレーションを追加した場合は手動実行：
 
 ```bash
 kamal app exec 'bin/rails db:migrate'
 ```
 
-## 7.5 動作確認
+## 7.4 動作確認
 
 ブラウザで確認：
 

@@ -15,7 +15,7 @@ service: patto
 # -----------------------------------------------------------------------------
 # Docker イメージ設定
 # -----------------------------------------------------------------------------
-image: YOUR_DOCKERHUB_USERNAME/patto
+image: crgstar/patto
 
 # -----------------------------------------------------------------------------
 # デプロイ先サーバー
@@ -23,14 +23,14 @@ image: YOUR_DOCKERHUB_USERNAME/patto
 servers:
   web:
     hosts:
-      - YOUR_SERVER_IP  # ← ConoHa VPS の IP アドレス
+      - conoha
 
 # -----------------------------------------------------------------------------
 # プロキシ設定 (Kamal 2.0 - kamal-proxy)
 # -----------------------------------------------------------------------------
 proxy:
   ssl: true
-  host: api.YOUR_DOMAIN  # ← api.patto.example.com の形式
+  host: api.patto.crgstar.com
   app_port: 80
   healthcheck:
     path: /up
@@ -41,7 +41,7 @@ proxy:
 # Docker レジストリ設定
 # -----------------------------------------------------------------------------
 registry:
-  username: YOUR_DOCKERHUB_USERNAME
+  username: crgstar
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -61,7 +61,7 @@ env:
     DB_HOST: patto-mysql
     DB_PORT: 3306
     DB_USERNAME: backend
-    FRONTEND_URL: https://YOUR_DOMAIN
+    FRONTEND_URL: https://patto.crgstar.com
   secret:
     - RAILS_MASTER_KEY
     - BACKEND_DATABASE_PASSWORD
@@ -72,7 +72,7 @@ env:
 accessories:
   mysql:
     image: mysql:8.0
-    host: YOUR_SERVER_IP
+    host: conoha
     port: "3306:3306"
     env:
       clear:
