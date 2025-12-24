@@ -1,0 +1,143 @@
+# =============================================================================
+# Patto - Kamal デプロイ設定
+# =============================================================================
+# 構成: Cloudflare + ConoHa VPS 1GB
+# ドキュメント: https://kamal-deploy.org/docs/configuration/
+#
+# 使い方:
+#   1. このファイルの YOUR_* を実際の値に置き換える
+#   2. .kamal/secrets を設定する
+#   3. kamal setup を実行
+# =============================================================================
+
+service: patto
+
+# -----------------------------------------------------------------------------
+# Docker イメージ設定
+# -----------------------------------------------------------------------------
+# Docker Hub のユーザー名/イメージ名
+# 例: mydockerhub/patto
+image: YOUR_DOCKERHUB_USERNAME/patto
+
+# -----------------------------------------------------------------------------
+# デプロイ先サーバー
+# -----------------------------------------------------------------------------
+servers:
+  web:
+    hosts:
+      - YOUR_SERVER_IP  # ← ConoHa VPS の IP アドレスに置き換え
+    labels:
+      traefik.http.routers.patto.rule: Host(`api.YOUR_DOMAIN`)
+      traefik.http.routers.patto.tls: true
+      traefik.http.routers.patto.tls.certresolver: letsencrypt
+    options:
+      network: "private"
+
+# -----------------------------------------------------------------------------
+# プロキシ設定 (Kamal 2.0+)
+# -----------------------------------------------------------------------------
+proxy:
+  ssl: true
+  host: api.YOUR_DOMAIN  # ← api.example.com の形式
+  app_port: 80  # Thruster が 80 番ポートで起動
+
+# -----------------------------------------------------------------------------
+# Docker レジストリ設定
+# -----------------------------------------------------------------------------
+registry:
+  username: YOUR_DOCKERHUB_USERNAME  # ← Docker Hub ユーザー名
+  password:
+    - KAMAL_REGISTRY_PASSWORD  # .kamal/secrets から読み込み
+
+# -----------------------------------------------------------------------------
+# ビルド設定
+# -----------------------------------------------------------------------------
+builder:
+  arch: amd64
+  context: .
+  dockerfile: Dockerfile
+
+# -----------------------------------------------------------------------------
+# 環境変数
+# -----------------------------------------------------------------------------
+env:
+  # 公開して良い環境変数
+  clear:
+    RAILS_ENV: production
+    RAILS_LOG_LEVEL: info
+    RAILS_SERVE_STATIC_FILES: false
+    DB_HOST: patto-mysql  # MySQL コンテナ名
+    DB_PORT: 3306
+    DB_USERNAME: backend
+    FRONTEND_URL: https://YOUR_DOMAIN  # ← フロントエンドの URL
+    SOLID_QUEUE_IN_PUMA: true
+  # シークレット（.kamal/secrets から読み込み）
+  secret:
+    - RAILS_MASTER_KEY
+    - BACKEND_DATABASE_PASSWORD
+
+# -----------------------------------------------------------------------------
+# MySQL 設定
+# -----------------------------------------------------------------------------
+accessories:
+  mysql:
+    image: mysql:8.0
+    host: YOUR_SERVER_IP  # ← ConoHa VPS の IP アドレスに置き換え
+    port: "127.0.0.1:3306:3306"  # ローカルのみ公開
+    env:
+      clear:
+        MYSQL_ROOT_HOST: '%'
+        MYSQL_DATABASE: backend_production
+        MYSQL_USER: backend
+      secret:
+        - MYSQL_ROOT_PASSWORD
+        - MYSQL_PASSWORD
+    directories:
+      - mysql_data:/var/lib/mysql
+    options:
+      network: "private"
+      restart: unless-stopped
+    cmd: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+# -----------------------------------------------------------------------------
+# ヘルスチェック
+# -----------------------------------------------------------------------------
+healthcheck:
+  path: /up
+  port: 80
+  interval: 10s
+  max_attempts: 30
+
+# -----------------------------------------------------------------------------
+# ボリューム（永続化データ）
+# -----------------------------------------------------------------------------
+volumes:
+  - "patto_storage:/rails/storage"
+
+# -----------------------------------------------------------------------------
+# SSH 設定
+# -----------------------------------------------------------------------------
+ssh:
+  user: deploy  # 専用デプロイユーザー（root は使わない）
+  # keys:
+  #   - ~/.ssh/id_ed25519
+
+# -----------------------------------------------------------------------------
+# Traefik 設定（リバースプロキシ + SSL）
+# -----------------------------------------------------------------------------
+traefik:
+  options:
+    publish:
+      - "443:443"
+      - "80:80"
+    volume:
+      - "/letsencrypt:/letsencrypt"
+  args:
+    entryPoints.web.address: ":80"
+    entryPoints.websecure.address: ":443"
+    entryPoints.web.http.redirections.entryPoint.to: websecure
+    entryPoints.web.http.redirections.entryPoint.scheme: https
+    # ↓ Let's Encrypt 用のメールアドレスに置き換え
+    certificatesResolvers.letsencrypt.acme.email: YOUR_EMAIL@example.com
+    certificatesResolvers.letsencrypt.acme.storage: /letsencrypt/acme.json
+    certificatesResolvers.letsencrypt.acme.httpchallenge.entrypoint: web
