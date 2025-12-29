@@ -690,36 +690,99 @@ test → lint → build → deploy → Cloudflare Pages
 - ✅ main ブランチのみ自動デプロイ
 - ✅ ビルド成果物をキャッシュして効率化
 
-## 10.2 必要な情報を準備
+## 10.2 既に GitHub 連携を使用している場合
+
+> **重要**: 既に Cloudflare Pages で GitHub 連携（自動ビルド）を使用している場合、プロジェクトを再作成する必要があります。
+
+### なぜ再作成が必要か
+
+GitHub Actions でデプロイする場合と Cloudflare の GitHub 連携では、デプロイ方式が異なります：
+
+| 方式 | ビルド場所 | テスト実行 | デプロイタイミング |
+|------|----------|----------|-----------------|
+| **GitHub 連携** | Cloudflare 側 | なし | GitHub push 時に自動 |
+| **GitHub Actions** | GitHub Actions 内 | あり | テスト成功後のみ |
+
+両方が有効だと、デプロイが2回実行されてしまうため、プロジェクトを再作成します。
+
+### プロジェクト再作成手順
+
+#### 1. 現在の設定をメモ
+
+Cloudflare Dashboard → Workers & Pages → patto で以下をメモ：
+
+- **カスタムドメイン**（Custom domains タブ）
+- **環境変数**（Settings → Environment variables）
+
+#### 2. プロジェクトを削除
+
+1. Cloudflare Dashboard → Workers & Pages
+2. "patto" プロジェクトの `[...]` メニュー → **Delete**
+3. プロジェクト名 "patto" を入力して確認
+4. **Delete** をクリック
+
+#### 3. 新しいプロジェクトを作成（Direct Upload 方式）
+
+1. **Create application** → **Pages** タブ
+2. ⭐ **Upload assets** を選択（"Connect to Git" ではなく）
+3. Project name: `patto`
+4. **Create project**
+5. "Begin your first deploy" はスキップ
+
+#### 4. カスタムドメインを再設定
+
+1. プロジェクト → **Custom domains** → **Set up a custom domain**
+2. メモしたドメインを入力（例: `patto.your-domain.com`）
+3. **Continue** → **Activate domain**
+
+#### 5. 環境変数を再設定（必要な場合）
+
+1. **Settings** → **Environment variables** → **Add variable**
+2. メモした環境変数を設定（例: `VITE_API_URL`）
+
+---
+
+## 10.3 必要な情報を準備
 
 以下の情報を手元に用意してください：
 
-### Cloudflare 情報
+### CLOUDFLARE_API_TOKEN の作成
 
-| 項目 | 取得方法 |
-|------|---------|
-| `CLOUDFLARE_API_TOKEN` | [Cloudflare Dashboard](https://dash.cloudflare.com/) → **My Profile** → **API Tokens** → **Create Token**<br>テンプレート: **Edit Cloudflare Workers**<br>または、カスタムトークンで `Cloudflare Pages:Edit` 権限を付与 |
-| `CLOUDFLARE_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**<br>右側のサイドバーに表示される **Account ID** をコピー |
+**手順:**
 
-### API トークンの作成手順（詳細）
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → 右上プロフィール → **My Profile**
+2. **API Tokens** → **Create Token**
+3. **Edit Cloudflare Workers** テンプレート → **Use template**
 
-1. [Cloudflare Dashboard](https://dash.cloudflare.com/) にログイン
-2. 右上のプロフィールアイコン → **My Profile**
-3. **API Tokens** → **Create Token**
-4. **Edit Cloudflare Workers** テンプレートを選択
-5. **Continue to summary** → **Create Token**
-6. トークンをコピー（一度しか表示されません！）
+4. **Permissions（権限）** を確認:
+   ```
+   Account | Cloudflare Pages | Edit
+   ```
 
-または、カスタムトークンを作成：
+5. ⭐ **Account Resources（アカウントリソース）**:
+   ```
+   Include | あなたのアカウント名（メールアドレスまたは名前）
+   ```
 
-| 設定項目 | 値 |
-|---------|-----|
-| Token name | `patto-frontend-deploy` |
-| Permissions | Account → Cloudflare Pages → Edit |
-| Account Resources | Include → あなたのアカウント |
-| Zone Resources | すべてのゾーン |
+6. ⭐ **Zone Resources（ゾーンリソース）**:
 
-## 10.3 GitHub Secrets を設定
+   以下のいずれかを選択:
+
+   - **All zones**（推奨・簡単）
+   - **Specific zone** → あなたのドメインを選択
+
+7. **Continue to summary** → 設定を確認 → **Create Token**
+
+8. ⚠️ **トークンをコピー**（一度しか表示されません！）
+
+### CLOUDFLARE_ACCOUNT_ID の取得
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
+2. 右サイドバーの **Account ID** をコピー
+
+---
+
+## 10.4 GitHub Secrets を設定
 
 1. GitHub リポジトリページを開く
 2. **Settings** → **Secrets and variables** → **Actions**
@@ -735,7 +798,9 @@ test → lint → build → deploy → Cloudflare Pages
 - API トークンは一度しか表示されないため、必ず安全な場所にメモしてください
 - トークンが漏洩した場合は、すぐに Cloudflare で無効化してください
 
-## 10.4 ワークフローファイルの確認
+---
+
+## 10.5 ワークフローファイルの確認
 
 `.github/workflows/deploy-frontend.yml` が既に作成されています。
 
@@ -759,7 +824,7 @@ test → lint → build → deploy → Cloudflare Pages
 - Cloudflare Wrangler Action でデプロイ
 - デプロイ URL を出力
 
-## 10.5 動作確認
+## 10.6 動作確認
 
 ### 初回デプロイテスト
 
@@ -789,7 +854,7 @@ https://your-domain.com
 📦 Deployment URL: https://xxxxxx.patto.pages.dev
 ```
 
-## 10.6 トラブルシューティング
+## 10.7 トラブルシューティング
 
 ### API トークンエラー
 
@@ -835,7 +900,7 @@ https://your-domain.com
 
 > **Note**: これは意図した動作です。テストが失敗した場合、デプロイは実行されません。
 
-## 10.7 運用
+## 10.8 運用
 
 ### 自動デプロイのトリガー
 
