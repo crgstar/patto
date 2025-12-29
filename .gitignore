@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.production
 
 # OS固有ファイル
 .DS_Store
