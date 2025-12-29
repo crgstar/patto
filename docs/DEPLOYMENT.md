@@ -243,25 +243,26 @@ vim config/deploy.yml
 # Docker Hub ユーザー名
 image: YOUR_DOCKERHUB_USERNAME/patto
 
-# サーバーIP（2箇所）
+# サーバーIP
 servers:
   web:
     hosts:
       - YOUR_SERVER_IP  # ← ConoHa の IP
 
-# ドメイン
+# ドメイン（API用）
 proxy:
-  host: api.your-domain.com  # ← 購入したドメイン
+  ssl: true
+  host: api.patto.your-domain.com  # ← 購入したドメイン
 
-# 同じくサーバーIP
+# フロントエンドURL
+env:
+  clear:
+    FRONTEND_URL: https://patto.your-domain.com
+
+# MySQL のサーバーIP
 accessories:
   mysql:
     host: YOUR_SERVER_IP  # ← ConoHa の IP
-
-# メールアドレス（SSL証明書用）
-traefik:
-  args:
-    certificatesResolvers.letsencrypt.acme.email: your-email@example.com
 ```
 
 ## 5.2 シークレット設定
@@ -353,35 +354,13 @@ ssh-keyscan -H YOUR_SERVER_IP >> ~/.ssh/known_hosts
 **Docker ログインエラー:**
 → Docker Hub トークンを確認
 
-## 7.3 データベース作成
-
-デプロイ完了後、追加DBを作成：
-
-```bash
-# MySQL に接続
-kamal accessory exec mysql --interactive 'mysql -u root -p'
-```
-
-パスワード入力後、以下のSQLを実行：
-
-```sql
-CREATE DATABASE backend_production_cache;
-CREATE DATABASE backend_production_queue;
-CREATE DATABASE backend_production_cable;
-GRANT ALL PRIVILEGES ON backend_production_cache.* TO 'backend'@'%';
-GRANT ALL PRIVILEGES ON backend_production_queue.* TO 'backend'@'%';
-GRANT ALL PRIVILEGES ON backend_production_cable.* TO 'backend'@'%';
-FLUSH PRIVILEGES;
-exit;
-```
-
-## 7.4 マイグレーション
+## 7.3 マイグレーション
 
 ```bash
 kamal app exec 'bin/rails db:migrate'
 ```
 
-## 7.5 動作確認
+## 7.4 動作確認
 
 ブラウザで確認：
 
@@ -408,9 +387,9 @@ https://api.your-domain.com/up
 | Project name | patto |
 | Production branch | main |
 | Framework preset | None |
-| Build command | `cd frontend && npm ci && npm run build` |
-| Build output directory | `frontend/dist` |
-| Root directory | `/` (空のまま) |
+| Root directory | `frontend` |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
 
 ## 8.3 環境変数
 
@@ -528,7 +507,7 @@ kamal rollback        # 1つ前のバージョンに戻す
 ```bash
 kamal app boot        # Rails 再起動
 kamal accessory reboot mysql  # MySQL 再起動
-kamal traefik reboot  # Traefik 再起動
+kamal proxy reboot    # Proxy 再起動
 ```
 
 ## サーバー状態確認
@@ -587,12 +566,12 @@ docker build -t test .
 ## SSL 証明書エラー
 
 ```bash
-# Traefik ログ確認
+# kamal-proxy ログ確認
 ssh deploy@YOUR_SERVER_IP
-docker logs traefik
+docker logs kamal-proxy
 
 # DNS 設定を確認
-# api.your-domain.com の Proxy が OFF になっているか
+# api.patto.your-domain.com の Proxy が OFF になっているか
 ```
 
 ## コンテナが起動しない
