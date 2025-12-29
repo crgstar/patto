@@ -84,6 +84,23 @@ const unreadCounts = computed(() => {
   return counts
 })
 
+const selectedFeedName = computed(() => {
+  if (selectedFeedSourceId.value === 'all') {
+    return 'すべてのフィード'
+  }
+  const sfs = stickyFeedSourceStore.stickyFeedSources.find(
+    s => String(s.feed_source_id) === selectedFeedSourceId.value
+  )
+  return sfs ? (sfs.feed_source.title || sfs.feed_source.url) : ''
+})
+
+const currentUnreadCount = computed(() => {
+  if (selectedFeedSourceId.value === 'all') {
+    return unreadCounts.value.all || 0
+  }
+  return unreadCounts.value[selectedFeedSourceId.value] || 0
+})
+
 // Methods
 const fetchFeedItems = async (append = false) => {
   try {
@@ -235,11 +252,27 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
         <!-- フィードソース選択 -->
         <Select v-model="selectedFeedSourceId" class="flex-1">
           <SelectTrigger class="h-7 text-xs">
-            <SelectValue placeholder="すべてのフィード" />
+            <div class="flex items-center justify-between w-full gap-2">
+              <span class="truncate">{{ selectedFeedName }}</span>
+              <span
+                v-if="currentUnreadCount > 0"
+                class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium leading-none rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 flex-shrink-0 min-w-[20px]"
+              >
+                {{ currentUnreadCount }}
+              </span>
+            </div>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              すべてのフィード ({{ unreadCounts.all || 0 }})
+              <div class="flex items-center justify-between w-full gap-2">
+                <span>すべてのフィード</span>
+                <span
+                  v-if="unreadCounts.all > 0"
+                  class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium leading-none rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 flex-shrink-0 min-w-[20px]"
+                >
+                  {{ unreadCounts.all }}
+                </span>
+              </div>
             </SelectItem>
             <SelectSeparator v-if="stickyFeedSourceStore.stickyFeedSources.length > 0" />
             <SelectItem
@@ -247,7 +280,15 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
               :key="sfs.id"
               :value="String(sfs.feed_source_id)"
             >
-              {{ sfs.feed_source.title || sfs.feed_source.url }} ({{ unreadCounts[String(sfs.feed_source_id)] || 0 }})
+              <div class="flex items-center justify-between w-full gap-2">
+                <span class="truncate">{{ sfs.feed_source.title || sfs.feed_source.url }}</span>
+                <span
+                  v-if="(unreadCounts[String(sfs.feed_source_id)] || 0) > 0"
+                  class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium leading-none rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 flex-shrink-0 min-w-[20px]"
+                >
+                  {{ unreadCounts[String(sfs.feed_source_id)] }}
+                </span>
+              </div>
             </SelectItem>
             <SelectSeparator />
             <SelectItem value="__manage__">
