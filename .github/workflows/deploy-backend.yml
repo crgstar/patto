@@ -121,22 +121,36 @@ jobs:
 
       - name: Create Kamal secrets file
         working-directory: ./backend
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          BACKEND_DATABASE_PASSWORD: ${{ secrets.BACKEND_DATABASE_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
+          set +x  # Disable command echo for security
           mkdir -p .kamal
-          cat > .kamal/secrets << EOF
-          KAMAL_REGISTRY_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }}
-          RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
-          BACKEND_DATABASE_PASSWORD=${{ secrets.BACKEND_DATABASE_PASSWORD }}
-          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_PASSWORD=${{ secrets.BACKEND_DATABASE_PASSWORD }}
-          EOF
+          {
+            echo "KAMAL_REGISTRY_PASSWORD=${DOCKERHUB_TOKEN}"
+            echo "RAILS_MASTER_KEY=${RAILS_MASTER_KEY}"
+            echo "BACKEND_DATABASE_PASSWORD=${BACKEND_DATABASE_PASSWORD}"
+            echo "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+            echo "MYSQL_PASSWORD=${BACKEND_DATABASE_PASSWORD}"
+          } > .kamal/secrets
           chmod 600 .kamal/secrets
+          echo "::notice::Kamal secrets file created successfully"
 
       - name: Deploy with Kamal
         working-directory: ./backend
         run: |
           gem install kamal
           kamal deploy
+
+      - name: Cleanup secrets file
+        if: always()
+        working-directory: ./backend
+        run: |
+          rm -f .kamal/secrets
+          echo "::notice::Secrets file cleaned up"
 
       - name: Notify deployment status
         if: always()
