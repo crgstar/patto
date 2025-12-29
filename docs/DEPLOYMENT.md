@@ -96,6 +96,7 @@ Cloudflare + ConoHa VPS でのデプロイ手順です。
 | イメージ | **Ubuntu 24.04** |
 | rootパスワード | 強力なパスワードを設定 |
 | SSH Key | **追加する**（下記参照） |
+| セキュリティグループ | ssh と web を設定 |
 
 ## 2.3 SSH キーの登録
 
@@ -115,7 +116,7 @@ cat ~/.ssh/id_ed25519.pub
 2. 公開鍵（`ssh-ed25519 AAAA...`）を貼り付け
 3. 名前をつけて保存
 
-## 2.4 サーバー情報をメモ
+## 2.5 サーバー情報をメモ
 
 作成完了後、以下をメモ：
 
@@ -123,7 +124,7 @@ cat ~/.ssh/id_ed25519.pub
 サーバーIP: xxx.xxx.xxx.xxx
 ```
 
-## 2.5 SSH 接続確認
+## 2.6 SSH 接続確認
 
 ```bash
 ssh root@YOUR_SERVER_IP
@@ -169,6 +170,10 @@ chmod 600 /home/deploy/.ssh/authorized_keys
 
 # Docker グループに追加（sudo なしで docker 実行可能に）
 usermod -aG docker deploy
+
+# MySQLデータ用ディレクトリを作成（Kamal用）
+mkdir -p /home/deploy/patto-mysql/mysql_data
+chown -R deploy:deploy /home/deploy/patto-mysql
 ```
 
 ## 3.3 ファイアウォール設定
@@ -354,7 +359,16 @@ ssh-keyscan -H YOUR_SERVER_IP >> ~/.ssh/known_hosts
 **Docker ログインエラー:**
 → Docker Hub トークンを確認
 
-## 7.3 マイグレーション
+## 7.3 マイグレーション確認（初回は自動実行済み）
+
+初回デプロイ時は `db:prepare` が自動実行されますが、確認のため：
+
+```bash
+# マイグレーション状態を確認
+kamal app exec 'bin/rails db:migrate:status'
+```
+
+2回目以降のデプロイでマイグレーションを追加した場合は手動実行：
 
 ```bash
 kamal app exec 'bin/rails db:migrate'
