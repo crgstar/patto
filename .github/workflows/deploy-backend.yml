@@ -119,14 +119,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Create Kamal secrets file
+        working-directory: ./backend
+        run: |
+          mkdir -p .kamal
+          cat > .kamal/secrets << EOF
+          KAMAL_REGISTRY_PASSWORD=${{ secrets.DOCKERHUB_TOKEN }}
+          RAILS_MASTER_KEY=${{ secrets.RAILS_MASTER_KEY }}
+          BACKEND_DATABASE_PASSWORD=${{ secrets.BACKEND_DATABASE_PASSWORD }}
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD=${{ secrets.BACKEND_DATABASE_PASSWORD }}
+          EOF
+          chmod 600 .kamal/secrets
+
       - name: Deploy with Kamal
         working-directory: ./backend
-        env:
-          KAMAL_REGISTRY_PASSWORD: ${{ secrets.DOCKERHUB_TOKEN }}
-          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-          BACKEND_DATABASE_PASSWORD: ${{ secrets.BACKEND_DATABASE_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
-          MYSQL_PASSWORD: ${{ secrets.BACKEND_DATABASE_PASSWORD }}
         run: |
           gem install kamal
           kamal deploy
