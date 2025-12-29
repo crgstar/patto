@@ -386,62 +386,52 @@ https://api.your-domain.com/up
 
 ---
 
-# Step 8: Cloudflare Pages 設定
+# Step 8: Cloudflare Pages プロジェクト作成
+
+このステップでは、Cloudflare Pages のプロジェクトを作成します。
+
+> **推奨**: フロントエンドのデプロイは **Step 10 の GitHub Actions** を使用することを推奨します。テスト成功後のみデプロイされるため、より安全です。
 
 ## 8.1 プロジェクト作成
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
-2. **Create** → **Pages** → **Connect to Git**
-3. GitHub を連携してリポジトリを選択
+2. **Create** → **Pages** → **Pages** タブを選択
+3. **Create using Direct Upload** を選択
+4. Project name: `patto`
+5. Production branch: `main`
 
-## 8.2 ビルド設定
+## 8.2 カスタムドメイン設定
 
-| 項目 | 値 |
-|------|-----|
-| Project name | patto |
-| Production branch | main |
-| Framework preset | None |
-| Root directory | `frontend` |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-
-## 8.3 環境変数
-
-**Settings** → **Environment variables** → **Add variable**
-
-| Variable name | Value |
-|---------------|-------|
-| `VITE_API_URL` | `https://api.your-domain.com/api` |
-
-**Save** をクリック
-
-## 8.4 カスタムドメイン設定
-
-1. **Custom domains** → **Set up a custom domain**
+1. プロジェクトの **Custom domains** → **Set up a custom domain**
 2. `your-domain.com` を入力
 3. Cloudflare DNS に自動でレコードが追加される
 4. `www.your-domain.com` も追加（任意）
 
-## 8.5 デプロイ
+## 8.3 初回デプロイ（手動）
 
-1. **Deployments** → **Retry deployment** または
-2. GitHub に push すると自動デプロイ
+初回のみ、ローカルからデプロイしてプロジェクトを初期化します：
 
-## 8.6 動作確認
+```bash
+cd frontend
+npm run build
 
+# Wrangler CLI をインストール（まだの場合）
+npm install -g wrangler
+
+# Cloudflare にログイン
+wrangler login
+
+# 初回デプロイ
+wrangler pages deploy dist --project-name=patto
 ```
-https://your-domain.com
-```
 
-アプリが表示されれば完了！
+> **Note**: 2回目以降のデプロイは Step 10 の GitHub Actions で自動化されます。
 
 ---
 
 # Step 9: GitHub Actions 設定（バックエンド自動デプロイ）
 
 このステップでは、Rails API バックエンドの自動デプロイを設定します。
-
-> **Note**: フロントエンド（Vue.js）は Step 8 で Cloudflare Pages と GitHub を連携済みのため、自動デプロイされます。GitHub Actions の設定は不要です。
 
 ## 9.1 必要な情報を準備
 
@@ -674,6 +664,215 @@ kamal app exec 'env | grep DB'
 
 ---
 
+# Step 10: GitHub Actions 設定（フロントエンド自動デプロイ）⭐
+
+このステップでは、Vue.js フロントエンドの自動テスト・デプロイを設定します。
+
+> **推奨**: このステップを実施することで、テストが成功した場合のみデプロイされるため、コード品質が保証されます。
+
+## 10.1 ワークフローの動作
+
+`.github/workflows/deploy-frontend.yml` が以下の流れで実行されます：
+
+### プルリクエスト作成時
+```
+test → lint → 終了（デプロイはされません）
+```
+
+### main ブランチへの push 時
+```
+test → lint → build → deploy → Cloudflare Pages
+```
+
+**特徴:**
+- ✅ テストが失敗するとデプロイされない
+- ✅ PR でコード品質を事前チェック
+- ✅ main ブランチのみ自動デプロイ
+- ✅ ビルド成果物をキャッシュして効率化
+
+## 10.2 必要な情報を準備
+
+以下の情報を手元に用意してください：
+
+### Cloudflare 情報
+
+| 項目 | 取得方法 |
+|------|---------|
+| `CLOUDFLARE_API_TOKEN` | [Cloudflare Dashboard](https://dash.cloudflare.com/) → **My Profile** → **API Tokens** → **Create Token**<br>テンプレート: **Edit Cloudflare Workers**<br>または、カスタムトークンで `Cloudflare Pages:Edit` 権限を付与 |
+| `CLOUDFLARE_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**<br>右側のサイドバーに表示される **Account ID** をコピー |
+
+### API トークンの作成手順（詳細）
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) にログイン
+2. 右上のプロフィールアイコン → **My Profile**
+3. **API Tokens** → **Create Token**
+4. **Edit Cloudflare Workers** テンプレートを選択
+5. **Continue to summary** → **Create Token**
+6. トークンをコピー（一度しか表示されません！）
+
+または、カスタムトークンを作成：
+
+| 設定項目 | 値 |
+|---------|-----|
+| Token name | `patto-frontend-deploy` |
+| Permissions | Account → Cloudflare Pages → Edit |
+| Account Resources | Include → あなたのアカウント |
+| Zone Resources | すべてのゾーン |
+
+## 10.3 GitHub Secrets を設定
+
+1. GitHub リポジトリページを開く
+2. **Settings** → **Secrets and variables** → **Actions**
+3. **Secrets** タブで **New repository secret** をクリック
+4. 以下の **2 個**の Secrets を追加：
+
+| Name | Value | 説明 |
+|------|-------|------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン | Cloudflare Pages へのデプロイに使用 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID | デプロイ先アカウント |
+
+**重要な注意点:**
+- API トークンは一度しか表示されないため、必ず安全な場所にメモしてください
+- トークンが漏洩した場合は、すぐに Cloudflare で無効化してください
+
+## 10.4 ワークフローファイルの確認
+
+`.github/workflows/deploy-frontend.yml` が既に作成されています。
+
+主要なジョブ：
+
+### 1. test ジョブ
+- Vitest で 136 個のテストを実行
+- すべてのイベント（PR、main push）で実行
+
+### 2. lint ジョブ
+- コード品質チェック（lint スクリプトがある場合）
+- test ジョブと並列実行
+
+### 3. build ジョブ
+- `needs: [test, lint]` - テストとlintが成功した場合のみ実行
+- `if: github.ref == 'refs/heads/main'` - main ブランチのみ
+- ビルド成果物（`dist`）をアーティファクトとして保存
+
+### 4. deploy ジョブ
+- `needs: build` - ビルドが成功した場合のみ実行
+- Cloudflare Wrangler Action でデプロイ
+- デプロイ URL を出力
+
+## 10.5 動作確認
+
+### 初回デプロイテスト
+
+1. ワークフローファイルが main ブランチに push されていることを確認
+2. frontend ディレクトリに小さな変更を加える（例: README.md を更新）
+3. コミット＆プッシュ：
+   ```bash
+   git add frontend/
+   git commit -m "フロントエンドのテストデプロイ"
+   git push origin main
+   ```
+4. GitHub リポジトリの **Actions** タブを開く
+5. **Frontend CI/CD** ワークフローが実行されることを確認
+6. すべてのジョブが成功（✅）になることを確認
+
+### フロントエンド動作確認
+
+```bash
+# デプロイ成功後、ブラウザで確認
+https://your-domain.com
+```
+
+または、GitHub Actions のログから deployment-url を確認：
+
+```
+✅ Deployment successful!
+📦 Deployment URL: https://xxxxxx.patto.pages.dev
+```
+
+## 10.6 トラブルシューティング
+
+### API トークンエラー
+
+```
+✗ Error: Authentication error
+```
+
+**対処法:**
+1. `CLOUDFLARE_API_TOKEN` が正しくコピーされているか確認
+2. トークンに `Cloudflare Pages:Edit` 権限があるか確認
+3. トークンの有効期限が切れていないか確認
+
+### Account ID エラー
+
+```
+✗ Error: Account not found
+```
+
+**対処法:**
+1. `CLOUDFLARE_ACCOUNT_ID` が正しいか確認
+2. Cloudflare Dashboard → Workers & Pages の右サイドバーで Account ID を再確認
+
+### プロジェクト名エラー
+
+```
+✗ Error: Project 'patto' not found
+```
+
+**対処法:**
+1. Step 8.3 で初回デプロイを実行してプロジェクトを作成
+2. または、Cloudflare Dashboard でプロジェクト名を確認
+
+### テスト失敗時
+
+```
+✗ Test suite failed
+```
+
+**対処法:**
+1. ローカルで `cd frontend && npm test` を実行
+2. 失敗したテストを修正
+3. 再度コミット＆プッシュ
+
+> **Note**: これは意図した動作です。テストが失敗した場合、デプロイは実行されません。
+
+## 10.7 運用
+
+### 自動デプロイのトリガー
+
+以下の場合に自動実行されます：
+
+- `main` ブランチに push
+- `frontend/` ディレクトリ以下のファイルが変更された時
+- ワークフローファイル自体が変更された時
+
+### 手動デプロイ
+
+GitHub の **Actions** タブ → **Frontend CI/CD** → **Run workflow**
+
+### PR でのテスト
+
+プルリクエストを作成すると、自動的にテストが実行されます（デプロイはされません）：
+
+1. フィーチャーブランチを作成
+2. コードを変更してプッシュ
+3. PR を作成
+4. GitHub Actions が自動的にテストを実行
+5. テスト結果が PR に表示される
+6. マージ後、自動的にデプロイ
+
+### デプロイ履歴の確認
+
+1. GitHub リポジトリ → **Actions** タブ
+2. **Frontend CI/CD** ワークフローを選択
+3. 各デプロイの詳細ログを確認可能
+
+または、Cloudflare Dashboard:
+
+1. **Workers & Pages** → **patto**
+2. **Deployments** タブでデプロイ履歴を確認
+
+---
+
 # 完了チェックリスト
 
 - [ ] ドメイン取得完了
@@ -681,9 +880,11 @@ kamal app exec 'env | grep DB'
 - [ ] Docker インストール完了
 - [ ] Kamal 初回デプロイ成功
 - [ ] API 動作確認 (`/up`)
-- [ ] Cloudflare Pages デプロイ成功
+- [ ] Cloudflare Pages プロジェクト作成完了
+- [ ] Cloudflare Pages 初回デプロイ成功（手動）
 - [ ] フロントエンド動作確認
-- [ ] GitHub Actions 設定完了（任意）
+- [ ] GitHub Actions 設定完了（バックエンド）
+- [ ] GitHub Actions 設定完了（フロントエンド）⭐
 - [ ] バックアップ設定完了（任意）
 
 ---
