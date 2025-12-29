@@ -386,4 +386,186 @@ describe('FeedReader', () => {
       expect(html).toContain('max-w-[100px]')
     })
   })
+
+  describe('無限スクロール', () => {
+    it('スクロール底到達時に追加読み込みが実行されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      // 初回読み込み
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        title: `記事${i + 1}`,
+        url: `https://example.com/${i + 1}`,
+        published_at: new Date().toISOString(),
+        read: false,
+        feed_source_id: 1
+      }))
+      feedItemStore.hasMore = true
+      feedItemStore.loading = false
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // handleScrollメソッドが存在することを確認
+      expect(wrapper.vm.handleScroll).toBeDefined()
+
+      // スクロールイベントをシミュレート（底に到達）
+      const mockEvent = {
+        target: {
+          scrollTop: 1000,
+          scrollHeight: 1200,
+          clientHeight: 300
+        }
+      }
+
+      await wrapper.vm.handleScroll(mockEvent)
+
+      // fetchFeedItemsが追加モードで呼ばれることを確認
+      expect(feedItemStore.fetchFeedItems).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          offset: 20,
+          limit: 20,
+          append: true
+        })
+      )
+    })
+
+    it('hasMoreがfalseの場合は追加読み込みしないこと', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        { id: 1, title: '記事1', url: 'https://example.com/1', published_at: new Date().toISOString(), read: false, feed_source_id: 1 }
+      ]
+      feedItemStore.hasMore = false
+      feedItemStore.loading = false
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // 初回読み込み後のfetchFeedItemsの呼び出し回数を記録
+      const initialCallCount = feedItemStore.fetchFeedItems.mock.calls.length
+
+      // スクロールイベントをシミュレート
+      const mockEvent = {
+        target: {
+          scrollTop: 1000,
+          scrollHeight: 1200,
+          clientHeight: 300
+        }
+      }
+
+      await wrapper.vm.handleScroll(mockEvent)
+
+      // fetchFeedItemsが追加で呼ばれていないことを確認
+      expect(feedItemStore.fetchFeedItems).toHaveBeenCalledTimes(initialCallCount)
+    })
+
+    it('ローディング中は追加読み込みしないこと（重複リクエスト防止）', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = Array.from({ length: 20 }, (_, i) => ({
+        id: i + 1,
+        title: `記事${i + 1}`,
+        url: `https://example.com/${i + 1}`,
+        published_at: new Date().toISOString(),
+        read: false,
+        feed_source_id: 1
+      }))
+      feedItemStore.hasMore = true
+      feedItemStore.loading = true // ローディング中
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      const initialCallCount = feedItemStore.fetchFeedItems.mock.calls.length
+
+      // スクロールイベントをシミュレート
+      const mockEvent = {
+        target: {
+          scrollTop: 1000,
+          scrollHeight: 1200,
+          clientHeight: 300
+        }
+      }
+
+      await wrapper.vm.handleScroll(mockEvent)
+
+      // ローディング中なので追加で呼ばれていないことを確認
+      expect(feedItemStore.fetchFeedItems).toHaveBeenCalledTimes(initialCallCount)
+    })
+
+    it('フィードソース変更時にfeedItemsをリセットして再読み込みすること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.resetFeedItems = vi.fn()
+      feedItemStore.feedItems = []
+      feedItemStore.hasMore = true
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // フィードソースを変更
+      wrapper.vm.selectedFeedSourceId = '2'
+      await wrapper.vm.$nextTick()
+
+      // resetFeedItemsが呼ばれることを確認
+      expect(feedItemStore.resetFeedItems).toHaveBeenCalled()
+      // offset=0でfetchFeedItemsが呼ばれることを確認
+      expect(feedItemStore.fetchFeedItems).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          offset: 0
+        })
+      )
+    })
+  })
 })

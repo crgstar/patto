@@ -59,14 +59,16 @@ const feedSourceStore = useFeedSourceStore()
 // State
 const selectedFeedSourceId = ref('all') // 'all' = 'すべてのフィード'
 const previousFeedSourceId = ref('all') // Dialog開く前の値を保持
-const page = ref(0)
 const limit = ref(20)
-const hasMore = ref(true)
-const loading = ref(false)
 const refreshing = ref(false)
 const manageDialogOpen = ref(false)
+const scrollContainerRef = ref(null)
 
 // Computed
+const currentOffset = computed(() => feedItemStore.feedItems.length)
+const hasMore = computed(() => feedItemStore.hasMore)
+const loading = computed(() => feedItemStore.loading)
+
 const unreadCounts = computed(() => {
   const counts = { all: 0 }
   feedItemStore.feedItems.forEach(item => {
@@ -83,19 +85,32 @@ const unreadCounts = computed(() => {
 })
 
 // Methods
-const fetchFeedItems = async () => {
-  loading.value = true
+const fetchFeedItems = async (append = false) => {
   try {
     const feedSourceId = selectedFeedSourceId.value === 'all' ? null : parseInt(selectedFeedSourceId.value)
     await feedItemStore.fetchFeedItems(props.feedReader.id, {
-      offset: page.value * limit.value,
+      offset: append ? currentOffset.value : 0,
       limit: limit.value,
       feed_source_id: feedSourceId,
+      append: append
     })
   } catch (error) {
     console.error('Failed to fetch feed items:', error)
-  } finally {
-    loading.value = false
+  }
+}
+
+const handleScroll = async (event) => {
+  const target = event.target
+  const scrollTop = target.scrollTop
+  const scrollHeight = target.scrollHeight
+  const clientHeight = target.clientHeight
+
+  // 底から100px以内でトリガー
+  const threshold = 100
+  const isNearBottom = scrollTop + clientHeight >= scrollHeight - threshold
+
+  if (isNearBottom && hasMore.value && !loading.value) {
+    await fetchFeedItems(true) // append=true
   }
 }
 
@@ -103,8 +118,8 @@ const handleRefresh = async () => {
   refreshing.value = true
   try {
     await feedItemStore.refreshAll(props.feedReader.id)
-    page.value = 0
-    await fetchFeedItems()
+    feedItemStore.resetFeedItems()
+    await fetchFeedItems(false)
   } catch (error) {
     console.error('Failed to refresh feed items:', error)
   } finally {
@@ -155,14 +170,14 @@ const handleDelete = () => {
 const handleFeedSourceUpdated = async () => {
   await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
   // フィードアイテムを再取得
-  page.value = 0
-  await fetchFeedItems()
+  feedItemStore.resetFeedItems()
+  await fetchFeedItems(false)
 }
 
 // Lifecycle
 onMounted(async () => {
   await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
-  await fetchFeedItems()
+  await fetchFeedItems(false)
 })
 
 // Watch
@@ -176,9 +191,8 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
 
   // 通常のフィードソース変更時
   previousFeedSourceId.value = newValue
-  page.value = 0
-  hasMore.value = true
-  fetchFeedItems()
+  feedItemStore.resetFeedItems()
+  fetchFeedItems(false)
 })
 </script>
 
@@ -257,7 +271,11 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
     </div>
 
     <!-- フィードアイテムリスト -->
-    <div class="flex-1 overflow-y-auto px-2 py-1 scrollbar-subtle">
+    <div
+      ref="scrollContainerRef"
+      @scroll="handleScroll"
+      class="flex-1 overflow-y-auto px-2 py-1 scrollbar-subtle"
+    >
       <div v-if="feedItemStore.feedItems.length === 0 && !loading" class="py-4 text-center">
         <p class="text-sm text-muted-foreground">フィードがありません</p>
       </div>
@@ -367,9 +385,15 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
           </template>
         </TooltipProvider>
 
-        <!-- ローディング -->
+        <!-- ローディング表示 -->
         <div v-if="loading" class="py-2 text-center">
           <RefreshCw class="h-4 w-4 animate-spin inline" />
+          <span class="ml-2 text-xs text-muted-foreground">読み込み中...</span>
+        </div>
+
+        <!-- すべて読み込みました -->
+        <div v-if="!hasMore && feedItemStore.feedItems.length > 0" class="py-2 text-center">
+          <p class="text-xs text-muted-foreground">すべて読み込みました</p>
         </div>
       </div>
     </div>
