@@ -190,4 +190,5 @@ describe('FeedSourceManager', () => {
 
     expect(wrapper.text()).toContain('フィードがありません')
   })
+
 })
