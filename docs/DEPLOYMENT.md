@@ -21,69 +21,36 @@ Cloudflare + ConoHa VPS でのデプロイ手順です。
 │                     │   API     │                         │
 │  patto.example.com  │──────────►│  api.patto.example.com  │
 │                     │           │                         │
-│  無料               │           │  ¥468/月               │
 └─────────────────────┘           └─────────────────────────┘
 ```
-
-## コスト
-
-| サービス | 月額 | 年額 |
-|---------|------|------|
-| ConoHa VPS 1GB（まとめトク） | ¥468 | ¥5,616 |
-| Cloudflare Pages | 無料 | 無料 |
-| Cloudflare DNS | 無料 | 無料 |
-| ドメイン (.com) | - | ~¥1,500 |
-| Docker Hub | 無料 | 無料 |
-| **合計** | **約 ¥600** | **約 ¥7,100** |
-
----
-
-## 事前準備チェックリスト
-
-- [ ] Docker Hub アカウント作成
-- [ ] Cloudflare アカウント作成
-- [ ] SSH キーペア作成（なければ）
-- [ ] ローカルに Ruby インストール済み
 
 ---
 
 # Step 1: ドメイン取得（Cloudflare）
 
-## 1.1 Cloudflare アカウント作成
+## Cloudflare アカウント作成
 
 1. [Cloudflare](https://dash.cloudflare.com/sign-up) でアカウント作成
 2. メール認証を完了
 
-## 1.2 ドメイン購入
+## ドメイン購入
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com/) にログイン
 2. 左メニュー **Domain Registration** → **Register Domains**
 3. 希望のドメインを検索（例: `patto.com`, `mypatto.dev`）
 4. カートに追加して購入（クレジットカード）
 
-```
-おすすめ TLD:
-  .com   ~$10.11/年 (~¥1,500)
-  .dev   ~$12.00/年 (~¥1,800)  ※HTTPS強制
-  .app   ~$14.00/年 (~¥2,100)  ※HTTPS強制
-```
-
-## 1.3 DNS設定（後で使う）
-
-ドメイン購入後、DNS設定画面をブックマークしておく：
-**Dashboard** → **あなたのドメイン** → **DNS** → **Records**
-
 ---
 
 # Step 2: ConoHa VPS 契約
 
-## 2.1 アカウント作成
+## アカウント作成
 
 1. [ConoHa](https://www.conoha.jp/) にアクセス
 2. **今すぐお申し込み** → アカウント作成
 3. 電話/SMS認証、支払い方法登録
 
-## 2.2 VPS 作成
+## VPS 作成
 
 1. **VPS** → **サーバー追加**
 2. 以下の設定で作成：
@@ -92,13 +59,12 @@ Cloudflare + ConoHa VPS でのデプロイ手順です。
 |------|--------|
 | リージョン | 東京 |
 | サービス | VPS |
-| 料金タイプ | まとめトク（1GB: ¥468/月） |
 | イメージ | **Ubuntu 24.04** |
 | rootパスワード | 強力なパスワードを設定 |
 | SSH Key | **追加する**（下記参照） |
 | セキュリティグループ | ssh と web を設定 |
 
-## 2.3 SSH キーの登録
+## SSH キーの登録
 
 ### ローカルで SSH キー作成（まだない場合）
 
@@ -116,7 +82,7 @@ cat ~/.ssh/id_ed25519.pub
 2. 公開鍵（`ssh-ed25519 AAAA...`）を貼り付け
 3. 名前をつけて保存
 
-## 2.5 サーバー情報をメモ
+## サーバー情報をメモ
 
 作成完了後、以下をメモ：
 
@@ -124,7 +90,7 @@ cat ~/.ssh/id_ed25519.pub
 サーバーIP: xxx.xxx.xxx.xxx
 ```
 
-## 2.6 SSH 接続確認
+## SSH 接続確認
 
 ```bash
 ssh root@YOUR_SERVER_IP
@@ -142,7 +108,7 @@ SSH でサーバーに接続して実行：
 ssh root@YOUR_SERVER_IP
 ```
 
-## 3.1 Docker インストール
+## Docker インストール
 
 ```bash
 # Docker インストール（公式スクリプト）
@@ -153,7 +119,7 @@ docker --version
 # Docker version 27.x.x が表示されればOK
 ```
 
-## 3.2 デプロイ専用ユーザー作成
+## デプロイ専用ユーザー作成
 
 セキュリティのため、root ではなく専用ユーザーでデプロイします。
 
@@ -176,7 +142,7 @@ mkdir -p /home/deploy/patto-mysql/mysql_data
 chown -R deploy:deploy /home/deploy/patto-mysql
 ```
 
-## 3.3 ファイアウォール設定
+## ファイアウォール設定
 
 ```bash
 # ufw 有効化
@@ -189,7 +155,7 @@ ufw enable
 ufw status
 ```
 
-## 3.4 接続確認
+## 接続確認
 
 サーバーから exit して、deploy ユーザーで接続確認：
 
@@ -212,12 +178,12 @@ exit
 
 # Step 4: Docker Hub 設定
 
-## 4.1 アカウント作成
+## アカウント作成
 
 1. [Docker Hub](https://hub.docker.com/) でアカウント作成
 2. メール認証を完了
 
-## 4.2 アクセストークン取得
+## アクセストークン取得
 
 1. **Account Settings** → **Security** → **Access Tokens**
 2. **New Access Token** をクリック
@@ -233,7 +199,7 @@ exit
 
 # Step 5: Kamal 設定
 
-## 5.1 deploy.yml の編集
+## deploy.yml の編集
 
 `backend/config/deploy.yml` を編集：
 
@@ -270,7 +236,7 @@ accessories:
     host: YOUR_SERVER_IP  # ← ConoHa の IP
 ```
 
-## 5.2 シークレット設定
+## シークレット設定
 
 ```bash
 # シークレットファイルをコピー
@@ -307,7 +273,7 @@ openssl rand -hex 24
 
 # Step 6: DNS 設定
 
-## 6.1 Cloudflare DNS にレコード追加
+## Cloudflare DNS にレコード追加
 
 [Cloudflare Dashboard](https://dash.cloudflare.com/) → あなたのドメイン → **DNS** → **Records**
 
@@ -329,7 +295,7 @@ Cloudflare Pages 設定後に追加します。
 
 # Step 7: 初回デプロイ
 
-## 7.1 Kamal インストール
+## Kamal インストール
 
 ローカルで実行：
 
@@ -337,7 +303,7 @@ Cloudflare Pages 設定後に追加します。
 gem install kamal
 ```
 
-## 7.2 デプロイ実行
+## デプロイ実行
 
 ```bash
 cd backend
@@ -359,22 +325,16 @@ ssh-keyscan -H YOUR_SERVER_IP >> ~/.ssh/known_hosts
 **Docker ログインエラー:**
 → Docker Hub トークンを確認
 
-## 7.3 マイグレーション確認（初回は自動実行済み）
+## マイグレーション確認
 
-初回デプロイ時は `db:prepare` が自動実行されますが、確認のため：
+初回デプロイ時は `db:prepare` が自動実行されます。確認のため：
 
 ```bash
 # マイグレーション状態を確認
 kamal app exec 'bin/rails db:migrate:status'
 ```
 
-2回目以降のデプロイでマイグレーションを追加した場合は手動実行：
-
-```bash
-kamal app exec 'bin/rails db:migrate'
-```
-
-## 7.4 動作確認
+## 動作確認
 
 ブラウザで確認：
 
@@ -388,52 +348,111 @@ https://api.your-domain.com/up
 
 # Step 8: Cloudflare Pages プロジェクト作成
 
-このステップでは、Cloudflare Pages のプロジェクトを作成します。
-
-> **推奨**: フロントエンドのデプロイは **Step 10 の GitHub Actions** を使用することを推奨します。テスト成功後のみデプロイされるため、より安全です。
-
-## 8.1 プロジェクト作成
+## プロジェクト作成
 
 1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
 2. **Create** → **Pages** → **Pages** タブを選択
-3. **Create using Direct Upload** を選択
+3. **Upload assets** を選択（"Connect to Git" ではなく）
 4. Project name: `patto`
-5. Production branch: `main`
+5. **Create project**
+6. "Begin your first deploy" はスキップ
 
-## 8.2 カスタムドメイン設定
+## カスタムドメイン設定
 
 1. プロジェクトの **Custom domains** → **Set up a custom domain**
 2. `your-domain.com` を入力
 3. Cloudflare DNS に自動でレコードが追加される
 4. `www.your-domain.com` も追加（任意）
 
-## 8.3 初回デプロイ（手動）
+---
 
-初回のみ、ローカルからデプロイしてプロジェクトを初期化します：
+# Step 9: GitHub Actions 設定（フロントエンド自動デプロイ）⭐
 
-```bash
-cd frontend
-npm run build
+## 必要な情報を準備
 
-# Wrangler CLI をインストール（まだの場合）
-npm install -g wrangler
+以下の情報を手元に用意してください：
 
-# Cloudflare にログイン
-wrangler login
+### CLOUDFLARE_API_TOKEN の作成
 
-# 初回デプロイ
-wrangler pages deploy dist --project-name=patto
-```
+**手順:**
 
-> **Note**: 2回目以降のデプロイは Step 10 の GitHub Actions で自動化されます。
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → 右上プロフィール → **My Profile**
+2. **API Tokens** → **Create Token**
+3. **Edit Cloudflare Workers** テンプレート → **Use template**
+
+4. **Permissions（権限）** を確認:
+   ```
+   Account | Cloudflare Pages | Edit
+   ```
+
+5. ⭐ **Account Resources（アカウントリソース）**:
+   ```
+   Include | あなたのアカウント名（メールアドレスまたは名前）
+   ```
+
+6. ⭐ **Zone Resources（ゾーンリソース）**:
+
+   以下のいずれかを選択:
+
+   - **All zones**（推奨・簡単）
+   - **Specific zone** → あなたのドメインを選択
+
+7. **Continue to summary** → 設定を確認 → **Create Token**
+
+8. ⚠️ **トークンをコピー**（一度しか表示されません！）
+
+### CLOUDFLARE_ACCOUNT_ID の取得
+
+1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
+2. 右サイドバーの **Account ID** をコピー
 
 ---
 
-# Step 9: GitHub Actions 設定（バックエンド自動デプロイ）
+## GitHub Secrets を設定
+
+1. GitHub リポジトリページを開く
+2. **Settings** → **Secrets and variables** → **Actions**
+3. **Secrets** タブで **New repository secret** をクリック
+4. 以下の **2 個**の Secrets を追加：
+
+| Name | Value | 説明 |
+|------|-------|------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン | Cloudflare Pages へのデプロイに使用 |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID | デプロイ先アカウント |
+
+**重要な注意点:**
+- API トークンは一度しか表示されないため、必ず安全な場所にメモしてください
+- トークンが漏洩した場合は、すぐに Cloudflare で無効化してください
+
+---
+
+## 動作確認
+
+### 初回デプロイテスト
+
+1. ワークフローファイルが main ブランチに push されていることを確認
+2. frontend ディレクトリに小さな変更を加える（例: README.md を更新）
+3. コミット＆プッシュ：
+4. GitHub リポジトリの **Actions** タブを開く
+5. **Frontend CI/CD** ワークフローが実行されることを確認
+6. すべてのジョブが成功（✅）になることを確認
+
+### フロントエンド動作確認
+
+```bash
+# デプロイ成功後、ブラウザで確認
+https://your-domain.com
+```
+
+または、GitHub Actions のログから deployment-url を確認：
+
+---
+
+# Step 10: GitHub Actions 設定（バックエンド自動デプロイ）
 
 このステップでは、Rails API バックエンドの自動デプロイを設定します。
 
-## 9.1 必要な情報を準備
+## 必要な情報を準備
 
 以下の情報を手元に用意してください：
 
@@ -459,7 +478,7 @@ wrangler pages deploy dist --project-name=patto
 | `BACKEND_DATABASE_PASSWORD` | `backend/.kamal/secrets` ファイルの値 |
 | `MYSQL_ROOT_PASSWORD` | `backend/.kamal/secrets` ファイルの値 |
 
-## 9.2 GitHub Secrets を設定
+## GitHub Secrets を設定
 
 1. GitHub リポジトリページを開く
 2. **Settings** → **Secrets and variables** → **Actions**
@@ -482,11 +501,7 @@ wrangler pages deploy dist --project-name=patto
 - `SSH_PRIVATE_KEY` は改行を含む秘密鍵全体をコピーしてください
 - 秘密鍵は `-----BEGIN OPENSSH PRIVATE KEY-----` で始まり `-----END OPENSSH PRIVATE KEY-----` で終わります
 
-## 9.3 GitHub Actions ワークフローファイルを作成
-
-`.github/workflows/deploy-backend.yml` を作成します（次のセクションで詳細説明）。
-
-## 9.4 動作確認
+## 動作確認
 
 ### 初回デプロイテスト
 
@@ -501,39 +516,6 @@ wrangler pages deploy dist --project-name=patto
 curl https://api.your-domain.com/up
 # "OK" が返ってくればデプロイ成功
 ```
-
-## 9.5 トラブルシューティング
-
-**SSH 接続エラー**
-```
-✗ SSH 接続に失敗しました
-```
-→ `SSH_PRIVATE_KEY` が正しくコピーされているか確認してください
-
-**Docker ログインエラー**
-```
-✗ Docker Hub にログインできません
-```
-→ `DOCKERHUB_TOKEN` が正しいか、権限に "Write" が含まれているか確認してください
-
-**Kamal エラー**
-```
-✗ Kamal デプロイに失敗しました
-```
-→ ローカルで `kamal deploy` が成功するか確認してください
-
-## 9.6 運用
-
-### 自動デプロイのトリガー
-
-- `main` ブランチに push
-- `backend/` ディレクトリ以下のファイルが変更された時
-
-### 手動デプロイ
-
-GitHub の **Actions** タブ → **Deploy Backend to VPS** → **Run workflow**
-
----
 
 # 運用コマンド一覧
 
@@ -619,325 +601,6 @@ crontab -e
 
 ---
 
-# トラブルシューティング
-
-## デプロイが失敗する
-
-```bash
-# 詳細ログ
-kamal deploy --verbose
-
-# Docker ビルドのみテスト
-cd backend
-docker build -t test .
-```
-
-## SSL 証明書エラー
-
-```bash
-# kamal-proxy ログ確認
-ssh deploy@YOUR_SERVER_IP
-docker logs kamal-proxy
-
-# DNS 設定を確認
-# api.patto.your-domain.com の Proxy が OFF になっているか
-```
-
-## コンテナが起動しない
-
-```bash
-# サーバーで確認
-ssh deploy@YOUR_SERVER_IP
-docker ps -a
-docker logs patto-web
-```
-
-## DB 接続エラー
-
-```bash
-# ネットワーク確認
-kamal accessory exec mysql 'mysql -u backend -p -e "SELECT 1"'
-
-# 環境変数確認
-kamal app exec 'env | grep DB'
-```
-
----
-
-# Step 10: GitHub Actions 設定（フロントエンド自動デプロイ）⭐
-
-このステップでは、Vue.js フロントエンドの自動テスト・デプロイを設定します。
-
-> **推奨**: このステップを実施することで、テストが成功した場合のみデプロイされるため、コード品質が保証されます。
-
-## 10.1 ワークフローの動作
-
-`.github/workflows/deploy-frontend.yml` が以下の流れで実行されます：
-
-### プルリクエスト作成時
-```
-test → lint → 終了（デプロイはされません）
-```
-
-### main ブランチへの push 時
-```
-test → lint → build → deploy → Cloudflare Pages
-```
-
-**特徴:**
-- ✅ テストが失敗するとデプロイされない
-- ✅ PR でコード品質を事前チェック
-- ✅ main ブランチのみ自動デプロイ
-- ✅ ビルド成果物をキャッシュして効率化
-
-## 10.2 既に GitHub 連携を使用している場合
-
-> **重要**: 既に Cloudflare Pages で GitHub 連携（自動ビルド）を使用している場合、プロジェクトを再作成する必要があります。
-
-### なぜ再作成が必要か
-
-GitHub Actions でデプロイする場合と Cloudflare の GitHub 連携では、デプロイ方式が異なります：
-
-| 方式 | ビルド場所 | テスト実行 | デプロイタイミング |
-|------|----------|----------|-----------------|
-| **GitHub 連携** | Cloudflare 側 | なし | GitHub push 時に自動 |
-| **GitHub Actions** | GitHub Actions 内 | あり | テスト成功後のみ |
-
-両方が有効だと、デプロイが2回実行されてしまうため、プロジェクトを再作成します。
-
-### プロジェクト再作成手順
-
-#### 1. 現在の設定をメモ
-
-Cloudflare Dashboard → Workers & Pages → patto で以下をメモ：
-
-- **カスタムドメイン**（Custom domains タブ）
-- **環境変数**（Settings → Environment variables）
-
-#### 2. プロジェクトを削除
-
-1. Cloudflare Dashboard → Workers & Pages
-2. "patto" プロジェクトの `[...]` メニュー → **Delete**
-3. プロジェクト名 "patto" を入力して確認
-4. **Delete** をクリック
-
-#### 3. 新しいプロジェクトを作成（Direct Upload 方式）
-
-1. **Create application** → **Pages** タブ
-2. ⭐ **Upload assets** を選択（"Connect to Git" ではなく）
-3. Project name: `patto`
-4. **Create project**
-5. "Begin your first deploy" はスキップ
-
-#### 4. カスタムドメインを再設定
-
-1. プロジェクト → **Custom domains** → **Set up a custom domain**
-2. メモしたドメインを入力（例: `patto.your-domain.com`）
-3. **Continue** → **Activate domain**
-
-#### 5. 環境変数を再設定（必要な場合）
-
-1. **Settings** → **Environment variables** → **Add variable**
-2. メモした環境変数を設定（例: `VITE_API_URL`）
-
----
-
-## 10.3 必要な情報を準備
-
-以下の情報を手元に用意してください：
-
-### CLOUDFLARE_API_TOKEN の作成
-
-**手順:**
-
-1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → 右上プロフィール → **My Profile**
-2. **API Tokens** → **Create Token**
-3. **Edit Cloudflare Workers** テンプレート → **Use template**
-
-4. **Permissions（権限）** を確認:
-   ```
-   Account | Cloudflare Pages | Edit
-   ```
-
-5. ⭐ **Account Resources（アカウントリソース）**:
-   ```
-   Include | あなたのアカウント名（メールアドレスまたは名前）
-   ```
-
-6. ⭐ **Zone Resources（ゾーンリソース）**:
-
-   以下のいずれかを選択:
-
-   - **All zones**（推奨・簡単）
-   - **Specific zone** → あなたのドメインを選択
-
-7. **Continue to summary** → 設定を確認 → **Create Token**
-
-8. ⚠️ **トークンをコピー**（一度しか表示されません！）
-
-### CLOUDFLARE_ACCOUNT_ID の取得
-
-1. [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages**
-2. 右サイドバーの **Account ID** をコピー
-
----
-
-## 10.4 GitHub Secrets を設定
-
-1. GitHub リポジトリページを開く
-2. **Settings** → **Secrets and variables** → **Actions**
-3. **Secrets** タブで **New repository secret** をクリック
-4. 以下の **2 個**の Secrets を追加：
-
-| Name | Value | 説明 |
-|------|-------|------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン | Cloudflare Pages へのデプロイに使用 |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID | デプロイ先アカウント |
-
-**重要な注意点:**
-- API トークンは一度しか表示されないため、必ず安全な場所にメモしてください
-- トークンが漏洩した場合は、すぐに Cloudflare で無効化してください
-
----
-
-## 10.5 ワークフローファイルの確認
-
-`.github/workflows/deploy-frontend.yml` が既に作成されています。
-
-主要なジョブ：
-
-### 1. test ジョブ
-- Vitest で 136 個のテストを実行
-- すべてのイベント（PR、main push）で実行
-
-### 2. lint ジョブ
-- コード品質チェック（lint スクリプトがある場合）
-- test ジョブと並列実行
-
-### 3. build ジョブ
-- `needs: [test, lint]` - テストとlintが成功した場合のみ実行
-- `if: github.ref == 'refs/heads/main'` - main ブランチのみ
-- ビルド成果物（`dist`）をアーティファクトとして保存
-
-### 4. deploy ジョブ
-- `needs: build` - ビルドが成功した場合のみ実行
-- Cloudflare Wrangler Action でデプロイ
-- デプロイ URL を出力
-
-## 10.6 動作確認
-
-### 初回デプロイテスト
-
-1. ワークフローファイルが main ブランチに push されていることを確認
-2. frontend ディレクトリに小さな変更を加える（例: README.md を更新）
-3. コミット＆プッシュ：
-   ```bash
-   git add frontend/
-   git commit -m "フロントエンドのテストデプロイ"
-   git push origin main
-   ```
-4. GitHub リポジトリの **Actions** タブを開く
-5. **Frontend CI/CD** ワークフローが実行されることを確認
-6. すべてのジョブが成功（✅）になることを確認
-
-### フロントエンド動作確認
-
-```bash
-# デプロイ成功後、ブラウザで確認
-https://your-domain.com
-```
-
-または、GitHub Actions のログから deployment-url を確認：
-
-```
-✅ Deployment successful!
-📦 Deployment URL: https://xxxxxx.patto.pages.dev
-```
-
-## 10.7 トラブルシューティング
-
-### API トークンエラー
-
-```
-✗ Error: Authentication error
-```
-
-**対処法:**
-1. `CLOUDFLARE_API_TOKEN` が正しくコピーされているか確認
-2. トークンに `Cloudflare Pages:Edit` 権限があるか確認
-3. トークンの有効期限が切れていないか確認
-
-### Account ID エラー
-
-```
-✗ Error: Account not found
-```
-
-**対処法:**
-1. `CLOUDFLARE_ACCOUNT_ID` が正しいか確認
-2. Cloudflare Dashboard → Workers & Pages の右サイドバーで Account ID を再確認
-
-### プロジェクト名エラー
-
-```
-✗ Error: Project 'patto' not found
-```
-
-**対処法:**
-1. Step 8.3 で初回デプロイを実行してプロジェクトを作成
-2. または、Cloudflare Dashboard でプロジェクト名を確認
-
-### テスト失敗時
-
-```
-✗ Test suite failed
-```
-
-**対処法:**
-1. ローカルで `cd frontend && npm test` を実行
-2. 失敗したテストを修正
-3. 再度コミット＆プッシュ
-
-> **Note**: これは意図した動作です。テストが失敗した場合、デプロイは実行されません。
-
-## 10.8 運用
-
-### 自動デプロイのトリガー
-
-以下の場合に自動実行されます：
-
-- `main` ブランチに push
-- `frontend/` ディレクトリ以下のファイルが変更された時
-- ワークフローファイル自体が変更された時
-
-### 手動デプロイ
-
-GitHub の **Actions** タブ → **Frontend CI/CD** → **Run workflow**
-
-### PR でのテスト
-
-プルリクエストを作成すると、自動的にテストが実行されます（デプロイはされません）：
-
-1. フィーチャーブランチを作成
-2. コードを変更してプッシュ
-3. PR を作成
-4. GitHub Actions が自動的にテストを実行
-5. テスト結果が PR に表示される
-6. マージ後、自動的にデプロイ
-
-### デプロイ履歴の確認
-
-1. GitHub リポジトリ → **Actions** タブ
-2. **Frontend CI/CD** ワークフローを選択
-3. 各デプロイの詳細ログを確認可能
-
-または、Cloudflare Dashboard:
-
-1. **Workers & Pages** → **patto**
-2. **Deployments** タブでデプロイ履歴を確認
-
----
-
 # 完了チェックリスト
 
 - [ ] ドメイン取得完了
@@ -948,8 +611,8 @@ GitHub の **Actions** タブ → **Frontend CI/CD** → **Run workflow**
 - [ ] Cloudflare Pages プロジェクト作成完了
 - [ ] Cloudflare Pages 初回デプロイ成功（手動）
 - [ ] フロントエンド動作確認
-- [ ] GitHub Actions 設定完了（バックエンド）
 - [ ] GitHub Actions 設定完了（フロントエンド）⭐
+- [ ] GitHub Actions 設定完了（バックエンド）
 - [ ] バックアップ設定完了（任意）
 
 ---
