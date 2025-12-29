@@ -391,4 +391,186 @@ class Api::FeedItemsControllerTest < ActionDispatch::IntegrationTest
     # FeedReaderに紐づいていないので0件
     assert_equal 0, json_response['feed_items'].length
   end
+
+  # Pagination tests
+  test "should paginate feed items with offset and limit" do
+    # 7件の追加アイテムを作成（合計10件）
+    7.times do |i|
+      FeedItem.create!(
+        feed_source: @feed_source,
+        guid: "pagination-item-#{i}",
+        title: "ページネーション記事#{i}",
+        url: "https://example.com/pagination-#{i}",
+        description: "ページネーション記事#{i}の説明",
+        published_at: (i + 3).hours.ago
+      )
+    end
+
+    # 最初のページ（offset=0, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, offset: 0, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 5, json_response['feed_items'].length
+    assert_equal true, json_response['has_more']
+
+    # 2ページ目（offset=5, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, offset: 5, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 5, json_response['feed_items'].length
+    assert_equal false, json_response['has_more']
+
+    # 3ページ目（offset=10, limit=5）- データなし
+    get api_sticky_feed_items_url(@feed_reader, offset: 10, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 0, json_response['feed_items'].length
+    assert_equal false, json_response['has_more']
+  end
+
+  test "should return has_more false when no more items" do
+    # 3件のみの場合
+    get api_sticky_feed_items_url(@feed_reader, offset: 0, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 3, json_response['feed_items'].length
+    assert_equal false, json_response['has_more']
+  end
+
+  test "should respect pagination with feed_source_id filter" do
+    # 別のフィードソースとアイテムを作成
+    @feed_source2 = FeedSource.create!(
+      url: 'https://pagination-test.com/feed.rss',
+      title: 'ページネーションテストフィード',
+      user: @user
+    )
+
+    StickyFeedSource.create!(
+      sticky: @feed_reader,
+      feed_source: @feed_source2,
+      position: 1
+    )
+
+    # feed_source2に7件作成（合計10件のうち7件がfeed_source2）
+    7.times do |i|
+      FeedItem.create!(
+        feed_source: @feed_source2,
+        guid: "pagination-source2-item-#{i}",
+        title: "フィード2の記事#{i}",
+        url: "https://pagination-test.com/article-#{i}",
+        description: "フィード2の記事#{i}の説明",
+        published_at: (i + 1).hours.ago
+      )
+    end
+
+    # feed_source2でフィルタ + ページネーション（offset=0, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: @feed_source2.id, offset: 0, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 5, json_response['feed_items'].length
+    assert_equal true, json_response['has_more']
+    json_response['feed_items'].each do |item|
+      assert_equal @feed_source2.id, item['feed_source']['id']
+    end
+
+    # 2ページ目（offset=5, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, feed_source_id: @feed_source2.id, offset: 5, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 2, json_response['feed_items'].length
+    assert_equal false, json_response['has_more']
+  end
+
+  test "should respect pagination with read/unread filter" do
+    # 7件の追加アイテムを作成
+    7.times do |i|
+      item = FeedItem.create!(
+        feed_source: @feed_source,
+        guid: "pagination-read-item-#{i}",
+        title: "既読テスト記事#{i}",
+        url: "https://example.com/read-#{i}",
+        description: "既読テスト記事#{i}の説明",
+        published_at: (i + 3).hours.ago
+      )
+      # 最初の3件を既読にする
+      item.mark_as_read_by(@user) if i < 3
+    end
+
+    # 未読フィルタ + ページネーション（offset=0, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, filter: 'unread', offset: 0, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 5, json_response['feed_items'].length
+    assert_equal true, json_response['has_more']
+    json_response['feed_items'].each do |item|
+      assert_equal false, item['read']
+    end
+
+    # 2ページ目（offset=5, limit=5）
+    get api_sticky_feed_items_url(@feed_reader, filter: 'unread', offset: 5, limit: 5),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 2, json_response['feed_items'].length
+    assert_equal false, json_response['has_more']
+  end
+
+  test "should use default limit when not specified" do
+    # 25件の追加アイテムを作成（デフォルトlimit=20をテスト）
+    25.times do |i|
+      FeedItem.create!(
+        feed_source: @feed_source,
+        guid: "default-limit-item-#{i}",
+        title: "デフォルトリミット記事#{i}",
+        url: "https://example.com/default-#{i}",
+        description: "デフォルトリミット記事#{i}の説明",
+        published_at: (i + 3).hours.ago
+      )
+    end
+
+    # limitを指定しない場合、デフォルトで20件取得される
+    get api_sticky_feed_items_url(@feed_reader, offset: 0),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal 20, json_response['feed_items'].length
+    assert_equal true, json_response['has_more']
+  end
+
+  test "should enforce maximum limit of 100" do
+    # limitに100以上を指定しても100件までに制限される
+    get api_sticky_feed_items_url(@feed_reader, offset: 0, limit: 200),
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    # 既存の3件しかないので3件返される
+    assert_equal 3, json_response['feed_items'].length
+  end
 end

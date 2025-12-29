@@ -26,13 +26,30 @@ module Api
           .where('user_feed_items.user_id IS NULL OR (user_feed_items.user_id = ? AND user_feed_items.read = ?)', current_user.id, false)
       end
 
+      # ソート（published_at降順）
+      feed_items = feed_items.order(published_at: :desc)
+
+      # ページネーションパラメータ
+      offset = (params[:offset] || 0).to_i
+      limit = (params[:limit] || 20).to_i
+      limit = [limit, 100].min # 最大100件まで
+
+      # 総件数を取得（has_more判定用）
+      total_count = feed_items.count
+
+      # ページネーション適用
+      paginated_items = feed_items.offset(offset).limit(limit)
+
+      # has_moreフラグの計算
+      has_more = (offset + limit) < total_count
+
       # レスポンス生成（既読状態を含める）
-      items_with_read_status = feed_items.order(published_at: :desc).map do |item|
+      items_with_read_status = paginated_items.map do |item|
         item.as_json(include: { feed_source: { only: [:id], methods: [:domain] } })
             .merge(read: item.read_by?(current_user))
       end
 
-      render json: { feed_items: items_with_read_status }, status: :ok
+      render json: { feed_items: items_with_read_status, has_more: has_more }, status: :ok
     end
 
     def mark_as_read
