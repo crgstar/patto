@@ -9,7 +9,14 @@ WebMock.disable_net_connect!(allow_localhost: true)
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
-    parallelize(workers: :number_of_processors)
+    # PARALLEL_WORKERS環境変数で制御可能（未指定時はCPU数に応じた並列実行）
+    # 例: PARALLEL_WORKERS=1 bin/rails test （順次実行）
+    workers_count = if ENV['PARALLEL_WORKERS']
+                      ENV['PARALLEL_WORKERS'].to_i
+                    else
+                      :number_of_processors
+                    end
+    parallelize(workers: workers_count)
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
