@@ -284,5 +284,106 @@ describe('FeedReader', () => {
       const html = wrapper.html()
       expect(html).toContain('bg-secondary')
     })
+
+    it('ドメインがある場合、ファビコン付きバッジが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事',
+          url: 'https://example.com/article',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1,
+          feed_source: { domain: 'example.com' }
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: { feedReader: { id: 1, type: 'FeedReader', title: '', content: '' }, width: 3, height: 3 }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // ドメインとバッジのクラスが含まれることを確認
+      const html = wrapper.html()
+      expect(html).toContain('example.com')
+      expect(html).toContain('bg-muted')
+      expect(html).toContain('border-border')
+      // ファビコンのURLが含まれることを確認
+      expect(html).toContain('https://www.google.com/s2/favicons?domain=example.com')
+    })
+
+    it('ドメインがない場合、バッジが表示されないこと', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事',
+          url: 'https://example.com/article',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1,
+          feed_source: { domain: null }
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: { feedReader: { id: 1, type: 'FeedReader', title: '', content: '' }, width: 3, height: 3 }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // バッジが存在しないことを確認
+      const html = wrapper.html()
+      expect(html).not.toContain('bg-muted')
+    })
+
+    it('長いドメインが省略表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: 'テスト記事',
+          url: 'https://verylongdomainname.example.com/article',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1,
+          feed_source: { domain: 'verylongdomainname.example.com' }
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: { feedReader: { id: 1, type: 'FeedReader', title: '', content: '' }, width: 3, height: 3 }
+      })
+
+      await wrapper.vm.$nextTick()
+      await wrapper.vm.$nextTick()
+
+      // truncateクラスが含まれることを確認
+      const html = wrapper.html()
+      expect(html).toContain('truncate')
+      expect(html).toContain('max-w-[100px]')
+    })
   })
 })

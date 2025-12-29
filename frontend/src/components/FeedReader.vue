@@ -290,11 +290,26 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                       </p>
 
                       <!-- 日付とドメイン -->
-                      <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
-                        <span>{{ formatDate(item.published_at) }}</span>
-                        <span v-if="item.feed_source?.domain" class="text-muted-foreground/70">
-                          • {{ item.feed_source.domain }}
+                      <div class="flex items-center gap-2 mt-1">
+                        <!-- 日付表示 -->
+                        <span class="text-xs text-muted-foreground">
+                          {{ formatDate(item.published_at) }}
                         </span>
+
+                        <!-- ドメインバッジ -->
+                        <div
+                          v-if="item.feed_source?.domain"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-muted-foreground/20 border border-border text-xs text-muted-foreground"
+                        >
+                          <img
+                            :src="`https://www.google.com/s2/favicons?domain=${item.feed_source.domain}&sz=16`"
+                            :alt="`${item.feed_source.domain} favicon`"
+                            class="h-3 w-3 flex-shrink-0"
+                            loading="lazy"
+                            @error="$event.target.style.display='none'"
+                          />
+                          <span class="truncate max-w-[100px]">{{ item.feed_source.domain }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -325,11 +340,26 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                   <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
 
                   <!-- 日付とドメイン -->
-                  <div class="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
-                    <span>{{ formatDate(item.published_at) }}</span>
-                    <span v-if="item.feed_source?.domain" class="text-muted-foreground/70">
-                      • {{ item.feed_source.domain }}
+                  <div class="flex items-center gap-2 mt-1">
+                    <!-- 日付表示 -->
+                    <span class="text-xs text-muted-foreground">
+                      {{ formatDate(item.published_at) }}
                     </span>
+
+                    <!-- ドメインバッジ -->
+                    <div
+                      v-if="item.feed_source?.domain"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-muted-foreground/20 border border-border text-xs text-muted-foreground"
+                    >
+                      <img
+                        :src="`https://www.google.com/s2/favicons?domain=${item.feed_source.domain}&sz=16`"
+                        :alt="`${item.feed_source.domain} favicon`"
+                        class="h-3 w-3 flex-shrink-0"
+                        loading="lazy"
+                        @error="$event.target.style.display='none'"
+                      />
+                      <span class="truncate max-w-[100px]">{{ item.feed_source.domain }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
