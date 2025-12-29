@@ -437,46 +437,111 @@ https://your-domain.com
 
 ---
 
-# Step 9: GitHub Actions 設定（自動デプロイ）
+# Step 9: GitHub Actions 設定（バックエンド自動デプロイ）
 
-## 9.1 リポジトリ Secrets 設定
+このステップでは、Rails API バックエンドの自動デプロイを設定します。
 
-GitHub → リポジトリ → **Settings** → **Secrets and variables** → **Actions**
+> **Note**: フロントエンド（Vue.js）は Step 8 で Cloudflare Pages と GitHub を連携済みのため、自動デプロイされます。GitHub Actions の設定は不要です。
 
-### Secrets（機密情報）
+## 9.1 必要な情報を準備
 
-| Name | Value |
-|------|-------|
-| `DOCKERHUB_USERNAME` | Docker Hub ユーザー名 |
-| `DOCKERHUB_TOKEN` | Docker Hub アクセストークン |
-| `SSH_PRIVATE_KEY` | deploy ユーザー用 SSH 秘密鍵 (`cat ~/.ssh/id_ed25519`) |
-| `SERVER_IP` | ConoHa VPS の IP |
-| `RAILS_MASTER_KEY` | Rails Master Key |
-| `BACKEND_DATABASE_PASSWORD` | DB パスワード |
-| `MYSQL_ROOT_PASSWORD` | MySQL root パスワード |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
+以下の情報を手元に用意してください：
 
-**注意**: `SSH_PRIVATE_KEY` は deploy ユーザーでサーバーに接続できる秘密鍵です。
+### Docker Hub 情報
 
-### Variables（公開情報）
+| 項目 | 取得方法 |
+|------|---------|
+| `DOCKERHUB_USERNAME` | Docker Hub のユーザー名 |
+| `DOCKERHUB_TOKEN` | [Docker Hub](https://hub.docker.com/) → Account Settings → Security → Access Tokens → New Access Token<br>（権限: Read, Write, Delete） |
 
-| Name | Value |
-|------|-------|
-| `VITE_API_URL` | `https://api.your-domain.com/api` |
+### SSH 接続情報
 
-## 9.2 Cloudflare API トークン取得
+| 項目 | 取得方法 |
+|------|---------|
+| `SSH_PRIVATE_KEY` | `cat ~/.ssh/id_ed25519` を実行して秘密鍵全体をコピー<br>（`-----BEGIN OPENSSH PRIVATE KEY-----` で始まる） |
+| `SERVER_IP` | ConoHa VPS の IP アドレス |
 
-1. [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
-2. **Create Token**
-3. **Custom token** → **Get started**
-4. 権限設定：
-   - Account / Cloudflare Pages / Edit
-5. トークンを保存
+### Rails 環境変数
 
-## 9.3 Cloudflare Account ID 取得
+| 項目 | 取得方法 |
+|------|---------|
+| `RAILS_MASTER_KEY` | `cat backend/config/master.key` |
+| `BACKEND_DATABASE_PASSWORD` | `backend/.kamal/secrets` ファイルの値 |
+| `MYSQL_ROOT_PASSWORD` | `backend/.kamal/secrets` ファイルの値 |
 
-Dashboard 右サイドバー → **Account ID** をコピー
+## 9.2 GitHub Secrets を設定
+
+1. GitHub リポジトリページを開く
+2. **Settings** → **Secrets and variables** → **Actions**
+3. **Secrets** タブで **New repository secret** をクリック
+4. 以下の **7 個**の Secrets を追加：
+
+| Name | Value | 説明 |
+|------|-------|------|
+| `DOCKERHUB_USERNAME` | Docker Hub ユーザー名 | Docker イメージのプッシュに使用 |
+| `DOCKERHUB_TOKEN` | Docker Hub アクセストークン | Docker Hub への認証 |
+| `SSH_PRIVATE_KEY` | SSH 秘密鍵（全体） | VPS への接続に使用 |
+| `SERVER_IP` | ConoHa VPS の IP | デプロイ先サーバー |
+| `RAILS_MASTER_KEY` | Rails Master Key | credentials.yml.enc の復号化 |
+| `BACKEND_DATABASE_PASSWORD` | DB パスワード | Rails の DB 接続（MySQL ユーザー "backend" のパスワード） |
+| `MYSQL_ROOT_PASSWORD` | MySQL root パスワード | MySQL コンテナの起動 |
+
+> **Note**: `MYSQL_PASSWORD` は `BACKEND_DATABASE_PASSWORD` と同じ値が自動的に使用されるため、追加で設定する必要はありません。
+
+**重要な注意点:**
+- `SSH_PRIVATE_KEY` は改行を含む秘密鍵全体をコピーしてください
+- 秘密鍵は `-----BEGIN OPENSSH PRIVATE KEY-----` で始まり `-----END OPENSSH PRIVATE KEY-----` で終わります
+
+## 9.3 GitHub Actions ワークフローファイルを作成
+
+`.github/workflows/deploy-backend.yml` を作成します（次のセクションで詳細説明）。
+
+## 9.4 動作確認
+
+### 初回デプロイテスト
+
+1. ワークフローファイルを main ブランチに push
+2. GitHub リポジトリの **Actions** タブを開く
+3. ワークフローが自動実行されることを確認
+4. すべてのステップが成功（✅）になることを確認
+
+### API 動作確認
+
+```bash
+curl https://api.your-domain.com/up
+# "OK" が返ってくればデプロイ成功
+```
+
+## 9.5 トラブルシューティング
+
+**SSH 接続エラー**
+```
+✗ SSH 接続に失敗しました
+```
+→ `SSH_PRIVATE_KEY` が正しくコピーされているか確認してください
+
+**Docker ログインエラー**
+```
+✗ Docker Hub にログインできません
+```
+→ `DOCKERHUB_TOKEN` が正しいか、権限に "Write" が含まれているか確認してください
+
+**Kamal エラー**
+```
+✗ Kamal デプロイに失敗しました
+```
+→ ローカルで `kamal deploy` が成功するか確認してください
+
+## 9.6 運用
+
+### 自動デプロイのトリガー
+
+- `main` ブランチに push
+- `backend/` ディレクトリ以下のファイルが変更された時
+
+### 手動デプロイ
+
+GitHub の **Actions** タブ → **Deploy Backend to VPS** → **Run workflow**
 
 ---
 
