@@ -110,6 +110,149 @@ describe('useFeedItemStore', () => {
       expect(store.error).toBe('フィードアイテムの取得に失敗しました')
       expect(store.loading).toBe(false)
     })
+
+    it('offset > 0かつappend=trueの場合、既存データに追加すること', async () => {
+      const store = useFeedItemStore()
+
+      // 初回読み込み
+      const firstResponse = {
+        data: {
+          feed_items: [
+            { id: 1, title: '記事1', read: false },
+            { id: 2, title: '記事2', read: false }
+          ],
+          has_more: true
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(firstResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 2 })
+
+      expect(store.feedItems.length).toBe(2)
+
+      // 2回目読み込み（追加）
+      const secondResponse = {
+        data: {
+          feed_items: [
+            { id: 3, title: '記事3', read: false },
+            { id: 4, title: '記事4', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(secondResponse)
+      await store.fetchFeedItems(1, { offset: 2, limit: 2, append: true })
+
+      expect(store.feedItems.length).toBe(4)
+      expect(store.feedItems[0].id).toBe(1)
+      expect(store.feedItems[3].id).toBe(4)
+      expect(store.hasMore).toBe(false)
+    })
+
+    it('append=falseの場合、既存データをクリアして上書きすること', async () => {
+      const store = useFeedItemStore()
+
+      // 初回読み込み
+      const firstResponse = {
+        data: {
+          feed_items: [
+            { id: 1, title: '記事1', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(firstResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 20 })
+
+      // フィードソース変更（append=false）
+      const secondResponse = {
+        data: {
+          feed_items: [
+            { id: 10, title: '別フィード記事', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(secondResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 20, feed_source_id: 2, append: false })
+
+      expect(store.feedItems.length).toBe(1)
+      expect(store.feedItems[0].id).toBe(10)
+    })
+
+    it('offsetが0の場合、appendがtrueでも上書きすること', async () => {
+      const store = useFeedItemStore()
+
+      // 初回読み込み
+      const firstResponse = {
+        data: {
+          feed_items: [
+            { id: 1, title: '記事1', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(firstResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 20 })
+
+      // offset=0、append=trueでも上書き
+      const secondResponse = {
+        data: {
+          feed_items: [
+            { id: 10, title: '新しい記事', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(secondResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 20, append: true })
+
+      expect(store.feedItems.length).toBe(1)
+      expect(store.feedItems[0].id).toBe(10)
+    })
+
+    it('appendパラメータがない場合はデフォルトで上書きすること', async () => {
+      const store = useFeedItemStore()
+
+      // 初回読み込み
+      const firstResponse = {
+        data: {
+          feed_items: [
+            { id: 1, title: '記事1', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(firstResponse)
+      await store.fetchFeedItems(1, { offset: 0, limit: 20 })
+
+      // appendパラメータなし
+      const secondResponse = {
+        data: {
+          feed_items: [
+            { id: 10, title: '新しい記事', read: false }
+          ],
+          has_more: false
+        }
+      }
+      apiClient.get.mockResolvedValueOnce(secondResponse)
+      await store.fetchFeedItems(1, { offset: 5, limit: 20 })
+
+      expect(store.feedItems.length).toBe(1)
+      expect(store.feedItems[0].id).toBe(10)
+    })
+  })
+
+  describe('resetFeedItems', () => {
+    it('feedItemsとhasMoreをリセットすること', () => {
+      const store = useFeedItemStore()
+      store.feedItems = [{ id: 1, title: '記事1' }]
+      store.hasMore = false
+
+      store.resetFeedItems()
+
+      expect(store.feedItems).toEqual([])
+      expect(store.hasMore).toBe(true)
+    })
   })
 
   describe('markAsRead', () => {

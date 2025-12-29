@@ -23,13 +23,25 @@ export const useFeedItemStore = defineStore('feedItem', () => {
         }
       })
 
-      feedItems.value = response.data.feed_items
+      // append=trueかつoffset > 0の場合は既存データに追加、それ以外は上書き
+      if (params.append === true && params.offset > 0) {
+        feedItems.value = [...feedItems.value, ...response.data.feed_items]
+      } else {
+        feedItems.value = response.data.feed_items
+      }
+
       hasMore.value = response.data.has_more !== undefined ? response.data.has_more : false
     } catch (err) {
       error.value = err.response?.data?.error || 'フィードアイテムの取得に失敗しました'
     } finally {
       loading.value = false
     }
+  }
+
+  // フィードアイテムをリセット
+  const resetFeedItems = () => {
+    feedItems.value = []
+    hasMore.value = true
   }
 
   // フィードアイテムを既読にする
@@ -120,6 +132,7 @@ export const useFeedItemStore = defineStore('feedItem', () => {
     error,
     hasMore,
     fetchFeedItems,
+    resetFeedItems,
     markAsRead,
     markAsUnread,
     markAllAsRead,
