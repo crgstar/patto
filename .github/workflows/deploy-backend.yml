@@ -64,6 +64,7 @@ jobs:
           DB_USERNAME: patto_user
           DB_PASSWORD: patto_password
           PARALLEL_WORKERS: 1
+          SECRET_KEY_BASE: test_secret_key_base_for_ci_environment_only
         run: bin/rails test
 
       - name: Run security audit
