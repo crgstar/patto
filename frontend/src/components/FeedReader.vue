@@ -63,6 +63,7 @@ const limit = ref(20)
 const refreshing = ref(false)
 const manageDialogOpen = ref(false)
 const scrollContainerRef = ref(null)
+const unreadCountsCache = ref({}) // 各フィードソースの未読件数をキャッシュ
 
 // Computed
 const currentOffset = computed(() => feedItemStore.feedItems.length)
@@ -70,17 +71,27 @@ const hasMore = computed(() => feedItemStore.hasMore)
 const loading = computed(() => feedItemStore.loading)
 
 const unreadCounts = computed(() => {
-  const counts = { all: 0 }
+  // キャッシュから開始
+  const counts = { ...unreadCountsCache.value }
+
+  // 現在のfeedItemsから未読件数を計算
+  const currentCounts = { all: 0 }
   feedItemStore.feedItems.forEach(item => {
     if (!item.read) {
-      counts.all++
+      currentCounts.all++
       const feedSourceId = String(item.feed_source_id)
-      if (!counts[feedSourceId]) {
-        counts[feedSourceId] = 0
+      if (!currentCounts[feedSourceId]) {
+        currentCounts[feedSourceId] = 0
       }
-      counts[feedSourceId]++
+      currentCounts[feedSourceId]++
     }
   })
+
+  // キャッシュと現在のカウントをマージ（現在のカウントを優先）
+  Object.keys(currentCounts).forEach(key => {
+    counts[key] = currentCounts[key]
+  })
+
   return counts
 })
 
@@ -111,8 +122,30 @@ const fetchFeedItems = async (append = false) => {
       feed_source_id: feedSourceId,
       append: append
     })
+    // 取得したフィードアイテムから未読件数を計算してキャッシュに保存
+    await updateUnreadCountsCache()
   } catch (error) {
     console.error('Failed to fetch feed items:', error)
+  }
+}
+
+const updateUnreadCountsCache = async () => {
+  // 現在のfeedItemsから未読件数を計算
+  const counts = {}
+  feedItemStore.feedItems.forEach(item => {
+    if (!item.read) {
+      const feedSourceId = String(item.feed_source_id)
+      if (!counts[feedSourceId]) {
+        counts[feedSourceId] = 0
+      }
+      counts[feedSourceId]++
+    }
+  })
+
+  // キャッシュを更新（既存のキャッシュとマージ）
+  unreadCountsCache.value = {
+    ...unreadCountsCache.value,
+    ...counts
   }
 }
 
@@ -252,7 +285,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
         <!-- フィードソース選択 -->
         <Select v-model="selectedFeedSourceId" class="flex-1">
           <SelectTrigger class="h-7 text-xs">
-            <div class="flex items-center justify-between w-full gap-2">
+            <div class="flex items-center gap-2">
               <span class="truncate">{{ selectedFeedName }}</span>
               <span
                 v-if="currentUnreadCount > 0"
@@ -267,7 +300,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
               <div class="flex items-center justify-between w-full gap-2">
                 <span>すべてのフィード</span>
                 <span
-                  v-if="unreadCounts.all > 0"
+                  v-if="(unreadCounts.all || 0) > 0"
                   class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-medium leading-none rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 flex-shrink-0 min-w-[20px]"
                 >
                   {{ unreadCounts.all }}
