@@ -13,12 +13,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -64,6 +58,11 @@ const refreshing = ref(false)
 const manageDialogOpen = ref(false)
 const scrollContainerRef = ref(null)
 const unreadCountsCache = ref({}) // 各フィードソースの未読件数をキャッシュ
+
+// カーソル追跡型ツールチップ用のState
+const mouseX = ref(0)
+const mouseY = ref(0)
+const hoveredItem = ref(null)
 
 // Computed
 const currentOffset = computed(() => feedItemStore.feedItems.length)
@@ -216,6 +215,29 @@ const handleDelete = () => {
   emit('delete', props.feedReader.id)
 }
 
+// カーソル追跡型ツールチップのハンドラー
+const handleMouseEnter = (event, item) => {
+  if (item.description) {
+    hoveredItem.value = item
+    updateMousePosition(event)
+  }
+}
+
+const handleMouseMove = (event) => {
+  if (hoveredItem.value) {
+    updateMousePosition(event)
+  }
+}
+
+const handleMouseLeave = () => {
+  hoveredItem.value = null
+}
+
+const updateMousePosition = (event) => {
+  mouseX.value = event.clientX
+  mouseY.value = event.clientY
+}
+
 // フィードソース更新ハンドラー
 const handleFeedSourceUpdated = async () => {
   await stickyFeedSourceStore.fetchStickyFeedSources(props.feedReader.id)
@@ -354,110 +376,58 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
         <p class="text-sm text-muted-foreground">フィードがありません</p>
       </div>
       <div v-else class="space-y-1">
-        <TooltipProvider :delay-duration="0">
-          <template v-for="item in feedItemStore.feedItems" :key="item.id">
-            <!-- descriptionがある場合: Tooltip付き -->
-            <Tooltip v-if="item.description">
-              <TooltipTrigger as-child>
+        <div
+          v-for="item in feedItemStore.feedItems"
+          :key="item.id"
+          @click="handleItemClick(item)"
+          @mouseenter="handleMouseEnter($event, item)"
+          @mousemove="handleMouseMove"
+          @mouseleave="handleMouseLeave"
+          :class="cn(
+            'p-2 rounded-md cursor-pointer transition-colors',
+            'hover:bg-accent/10',
+            !item.read && 'bg-accent/5'
+          )"
+        >
+          <div class="flex items-start gap-2">
+            <!-- 未読インジケーター -->
+            <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
+            <div v-else class="w-2 flex-shrink-0" />
+
+            <div class="flex-1 min-w-0">
+              <!-- タイトル -->
+              <h4 class="text-sm font-normal leading-relaxed tracking-wide line-clamp-2">{{ item.title }}</h4>
+
+              <!-- 説明（省略表示）: descriptionがある場合のみ表示 -->
+              <p v-if="item.description" class="text-xs text-muted-foreground leading-relaxed line-clamp-1">
+                {{ item.description }}
+              </p>
+
+              <!-- 日付とドメイン -->
+              <div class="flex items-center gap-2 mt-1">
+                <!-- 日付表示 -->
+                <span class="text-xs text-muted-foreground tracking-wide">
+                  {{ formatDate(item.published_at) }}
+                </span>
+
+                <!-- ドメインバッジ -->
                 <div
-                  @click="handleItemClick(item)"
-                  :class="cn(
-                    'p-2 rounded-md cursor-pointer transition-colors',
-                    'hover:bg-accent/10',
-                    !item.read && 'bg-accent/5'
-                  )"
+                  v-if="item.feed_source?.domain"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-muted-foreground/20 border border-border text-xs text-muted-foreground"
                 >
-                  <div class="flex items-start gap-2">
-                    <!-- 未読インジケーター -->
-                    <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
-                    <div v-else class="w-2 flex-shrink-0" />
-
-                    <div class="flex-1 min-w-0">
-                      <!-- タイトル -->
-                      <h4 class="text-sm font-normal leading-relaxed tracking-wide line-clamp-2">{{ item.title }}</h4>
-
-                      <!-- 説明（省略表示） -->
-                      <p class="text-xs text-muted-foreground leading-relaxed line-clamp-1">
-                        {{ item.description }}
-                      </p>
-
-                      <!-- 日付とドメイン -->
-                      <div class="flex items-center gap-2 mt-1">
-                        <!-- 日付表示 -->
-                        <span class="text-xs text-muted-foreground tracking-wide">
-                          {{ formatDate(item.published_at) }}
-                        </span>
-
-                        <!-- ドメインバッジ -->
-                        <div
-                          v-if="item.feed_source?.domain"
-                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-muted-foreground/20 border border-border text-xs text-muted-foreground"
-                        >
-                          <img
-                            :src="`https://www.google.com/s2/favicons?domain=${item.feed_source.domain}&sz=16`"
-                            :alt="`${item.feed_source.domain} favicon`"
-                            class="h-3 w-3 flex-shrink-0"
-                            loading="lazy"
-                            @error="$event.target.style.display='none'"
-                          />
-                          <span class="truncate max-w-[100px] tracking-wide">{{ item.feed_source.domain }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p class="max-w-xs">{{ item.description }}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <!-- descriptionがない場合: Tooltipなし -->
-            <div
-              v-else
-              @click="handleItemClick(item)"
-              :class="cn(
-                'p-2 rounded-md cursor-pointer transition-colors',
-                'hover:bg-accent/10',
-                !item.read && 'bg-accent/5'
-              )"
-            >
-              <div class="flex items-start gap-2">
-                <!-- 未読インジケーター -->
-                <div v-if="!item.read" class="w-2 h-2 rounded-full bg-secondary mt-1 flex-shrink-0" />
-                <div v-else class="w-2 flex-shrink-0" />
-
-                <div class="flex-1 min-w-0">
-                  <!-- タイトル -->
-                  <h4 class="text-sm font-normal leading-relaxed tracking-wide line-clamp-2">{{ item.title }}</h4>
-
-                  <!-- 日付とドメイン -->
-                  <div class="flex items-center gap-2 mt-1">
-                    <!-- 日付表示 -->
-                    <span class="text-xs text-muted-foreground tracking-wide">
-                      {{ formatDate(item.published_at) }}
-                    </span>
-
-                    <!-- ドメインバッジ -->
-                    <div
-                      v-if="item.feed_source?.domain"
-                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted dark:bg-muted-foreground/20 border border-border text-xs text-muted-foreground"
-                    >
-                      <img
-                        :src="`https://www.google.com/s2/favicons?domain=${item.feed_source.domain}&sz=16`"
-                        :alt="`${item.feed_source.domain} favicon`"
-                        class="h-3 w-3 flex-shrink-0"
-                        loading="lazy"
-                        @error="$event.target.style.display='none'"
-                      />
-                      <span class="truncate max-w-[100px] tracking-wide">{{ item.feed_source.domain }}</span>
-                    </div>
-                  </div>
+                  <img
+                    :src="`https://www.google.com/s2/favicons?domain=${item.feed_source.domain}&sz=16`"
+                    :alt="`${item.feed_source.domain} favicon`"
+                    class="h-3 w-3 flex-shrink-0"
+                    loading="lazy"
+                    @error="$event.target.style.display='none'"
+                  />
+                  <span class="truncate max-w-[100px] tracking-wide">{{ item.feed_source.domain }}</span>
                 </div>
               </div>
             </div>
-          </template>
-        </TooltipProvider>
+          </div>
+        </div>
 
         <!-- ローディング表示 -->
         <div v-if="loading" class="py-2 text-center">
@@ -481,5 +451,23 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
         />
       </DialogContent>
     </Dialog>
+
+    <!-- カーソル追跡型カスタムツールチップ -->
+    <Teleport to="body">
+      <div
+        v-if="hoveredItem"
+        :style="{
+          position: 'fixed',
+          left: `${mouseX + 15}px`,
+          top: `${mouseY + 15}px`,
+          zIndex: 9999,
+          pointerEvents: 'none'
+        }"
+        class="max-w-xl px-3 py-1.5 rounded-md bg-popover text-popover-foreground shadow-md border-2 border-secondary/30 divide-y divide-border/30"
+      >
+        <div class="text-sm pb-2">{{ hoveredItem.title }}</div>
+        <div class="text-xs pt-2 leading-relaxed">{{ hoveredItem.description }}</div>
+      </div>
+    </Teleport>
   </div>
 </template>
