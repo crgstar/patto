@@ -58,6 +58,10 @@ module Api
 
     # create アクション
     test "フィードソースを作成できること" do
+      # フィード作成時に自動取得を試みるが、ここでは404を返して失敗させる
+      stub_request(:get, 'https://example.com/new-feed.xml')
+        .to_return(status: 404)
+
       assert_difference '@user.feed_sources.count', 1 do
         post api_feed_sources_path,
              params: { feed_source: { url: 'https://example.com/new-feed.xml', title: 'New Feed' } },
@@ -198,6 +202,10 @@ module Api
       @feed_source.discard
       assert @feed_source.discarded?
 
+      # フィード作成時に自動取得を試みるが、ここでは404を返して失敗させる
+      stub_request(:get, @feed_source.url)
+        .to_return(status: 404)
+
       assert_no_difference '@user.feed_sources.with_discarded.count' do
         post api_feed_sources_path,
              params: { feed_source: { url: @feed_source.url, title: 'Restored Feed' } },
@@ -216,6 +224,10 @@ module Api
       @feed_source.update!(title: 'Original', description: 'Original Description')
       @feed_source.discard
 
+      # フィード作成時に自動取得を試みるが、ここでは404を返して失敗させる
+      stub_request(:get, @feed_source.url)
+        .to_return(status: 404)
+
       post api_feed_sources_path,
            params: { feed_source: { url: @feed_source.url, title: 'New Title', description: 'New Description' } },
            headers: @headers
@@ -229,6 +241,9 @@ module Api
     end
 
     test "削除済みでないフィードソースは重複登録できないこと" do
+      stub_request(:get, @feed_source.url)
+        .to_return(status: 404)
+
       assert_no_difference '@user.feed_sources.count' do
         post api_feed_sources_path,
              params: { feed_source: { url: @feed_source.url } },
@@ -238,6 +253,43 @@ module Api
       assert_response :unprocessable_entity
       json = JSON.parse(response.body)
       assert_includes json['errors'].join, 'has already been taken'
+    end
+
+    test "フィードソース作成時に自動的にフィードデータを取得すること" do
+      rss_xml = <<~XML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0">
+          <channel>
+            <title>Auto Fetched Feed</title>
+            <description>This feed was automatically fetched</description>
+            <item>
+              <guid>auto-item-1</guid>
+              <title>Auto Item 1</title>
+              <link>https://example.com/auto-item-1</link>
+            </item>
+          </channel>
+        </rss>
+      XML
+
+      stub_request(:get, 'https://example.com/auto-feed.xml')
+        .to_return(status: 200, body: rss_xml)
+
+      assert_difference '@user.feed_sources.count', 1 do
+        post api_feed_sources_path,
+             params: { feed_source: { url: 'https://example.com/auto-feed.xml', title: 'Original Title' } },
+             headers: @headers
+      end
+
+      assert_response :created
+      json = JSON.parse(response.body)
+      # フィードから取得したタイトルで上書きされる
+      assert_equal 'Auto Fetched Feed', json['feed_source']['title']
+      assert_equal 'This feed was automatically fetched', json['feed_source']['description']
+
+      # フィードアイテムも保存されていることを確認
+      feed_source = @user.feed_sources.find(json['feed_source']['id'])
+      assert_equal 1, feed_source.feed_items.count
+      assert_equal 'Auto Item 1', feed_source.feed_items.first.title
     end
   end
 end

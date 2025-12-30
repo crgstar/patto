@@ -23,7 +23,10 @@ module Api
         feed_source.save!
       end
 
-      render json: { feed_source: feed_source }, status: :created
+      # フィード作成後、すぐにフィードデータを取得して名前を更新
+      feed_source.fetch_and_save_items
+
+      render json: { feed_source: feed_source.reload }, status: :created
     rescue ActiveRecord::RecordInvalid => e
       render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
