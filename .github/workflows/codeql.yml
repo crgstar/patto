@@ -1,0 +1,54 @@
+name: "CodeQL Security Scan"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 毎週月曜日 9:00 JST（00:00 UTC）に実行
+    - cron: '0 0 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      # CodeQLの結果をGitHub Security tabにアップロードするために必要
+      security-events: write
+      # すべてのリポジトリコンテンツを読み取るために必要
+      contents: read
+      # PRのメタデータを読み取るために必要
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: ruby
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # クエリスイート: default, security-extended, security-and-quality
+          queries: security-and-quality
+
+      # JavaScriptはビルド不要（build-mode: none）
+      # Rubyもビルド不要（Rails APIモード）
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+          output: sarif-results
+          upload: true
