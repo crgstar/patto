@@ -8,7 +8,9 @@
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     # フロントエンドのオリジンを環境変数から取得（デフォルト: Viteの開発サーバー）
-    origins ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+    # 本番フロントエンド + プレビュー環境を許可
+    origins ENV.fetch('FRONTEND_URL', 'http://localhost:5173'),
+            /\Ahttps:\/\/.*\.patto\.pages\.dev\z/
 
     resource '*',
       headers: :any,

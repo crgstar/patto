@@ -446,6 +446,41 @@ https://your-domain.com
 
 または、GitHub Actions のログから deployment-url を確認：
 
+## PRプレビューデプロイ機能
+
+GitHub Actionsは、プルリクエスト作成時にも自動的にプレビュー環境をデプロイします。
+
+### 動作フロー
+
+1. PRを作成または更新
+2. GitHub Actionsが自動実行：
+   - フロントエンドテスト（Vitest）
+   - ビルド（Vite）
+   - Cloudflare Pagesプレビューデプロイ
+3. PRコメントに自動投稿：
+   ```
+   ✅ プレビューデプロイ完了
+
+   プレビュー環境が更新されました:
+
+   🔗 デプロイURL: https://<branch-name>.patto.pages.dev
+
+   📦 コミット: `a1b2c3d`
+   🌿 ブランチ: `feature/new-ui`
+   ```
+
+### プレビューURL形式
+
+- 本番：`https://patto.crgstar.com`
+- プレビュー：`https://<branch-name>.patto.pages.dev`
+
+### 注意事項
+
+- プレビュー環境は本番APIに接続します（CORS設定済み）
+- Draft PRでもデプロイが実行されます
+- 同じPRへの再プッシュ時は、既存コメントが更新されます（新規コメントは作成されません）
+- プレビューデプロイメントはブランチ削除後も一定期間Cloudflare上に残ります
+
 ---
 
 # Step 10: GitHub Actions 設定（バックエンド自動デプロイ）
