@@ -341,17 +341,17 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
 
                     <div class="flex-1 min-w-0">
                       <!-- タイトル -->
-                      <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
+                      <h4 class="text-sm font-normal leading-relaxed tracking-wide line-clamp-2">{{ item.title }}</h4>
 
                       <!-- 説明（省略表示） -->
-                      <p class="text-xs text-muted-foreground line-clamp-1">
+                      <p class="text-xs text-muted-foreground leading-relaxed line-clamp-1">
                         {{ item.description }}
                       </p>
 
                       <!-- 日付とドメイン -->
                       <div class="flex items-center gap-2 mt-1">
                         <!-- 日付表示 -->
-                        <span class="text-xs text-muted-foreground">
+                        <span class="text-xs text-muted-foreground tracking-wide">
                           {{ formatDate(item.published_at) }}
                         </span>
 
@@ -367,7 +367,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                             loading="lazy"
                             @error="$event.target.style.display='none'"
                           />
-                          <span class="truncate max-w-[100px]">{{ item.feed_source.domain }}</span>
+                          <span class="truncate max-w-[100px] tracking-wide">{{ item.feed_source.domain }}</span>
                         </div>
                       </div>
                     </div>
@@ -396,12 +396,12 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
 
                 <div class="flex-1 min-w-0">
                   <!-- タイトル -->
-                  <h4 class="text-sm font-medium line-clamp-2">{{ item.title }}</h4>
+                  <h4 class="text-sm font-normal leading-relaxed tracking-wide line-clamp-2">{{ item.title }}</h4>
 
                   <!-- 日付とドメイン -->
                   <div class="flex items-center gap-2 mt-1">
                     <!-- 日付表示 -->
-                    <span class="text-xs text-muted-foreground">
+                    <span class="text-xs text-muted-foreground tracking-wide">
                       {{ formatDate(item.published_at) }}
                     </span>
 
@@ -417,7 +417,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
                         loading="lazy"
                         @error="$event.target.style.display='none'"
                       />
-                      <span class="truncate max-w-[100px]">{{ item.feed_source.domain }}</span>
+                      <span class="truncate max-w-[100px] tracking-wide">{{ item.feed_source.domain }}</span>
                     </div>
                   </div>
                 </div>
