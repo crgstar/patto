@@ -185,6 +185,13 @@ const handleItemClick = async (item) => {
   window.open(item.url, '_blank')
 }
 
+const handleItemRightClick = async (item) => {
+  // 右クリック時は既読化のみ行い、URLは開かない
+  if (!item.read) {
+    await feedItemStore.markAsRead(props.feedReader.id, item.id)
+  }
+}
+
 const formatDate = (dateString) => {
   const date = new Date(dateString)
   const now = new Date()
@@ -380,6 +387,7 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
           v-for="item in feedItemStore.feedItems"
           :key="item.id"
           @click="handleItemClick(item)"
+          @contextmenu.prevent="handleItemRightClick(item)"
           @mouseenter="handleMouseEnter($event, item)"
           @mousemove="handleMouseMove"
           @mouseleave="handleMouseLeave"
