@@ -1,5 +1,7 @@
 # Patto
 
+https://patto.crgstar.com
+
 Vue.js + Rails APIで構築されたダッシュボードアプリケーション
 
 ## 技術スタック
