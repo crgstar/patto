@@ -32,9 +32,10 @@ class FeedSource < ApplicationRecord
       return false
     end
 
+    # タイトル・説明が空の場合のみフィードから取得した値で上書き
     update(
-      title: feed.title,
-      description: feed.description,
+      title: title.presence || feed.title,
+      description: description.presence || feed.description,
       last_fetched_at: Time.current,
       fetch_error: nil
     )

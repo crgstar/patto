@@ -255,7 +255,7 @@ module Api
       assert_includes json['errors'].join, 'has already been taken'
     end
 
-    test "フィードソース作成時に自動的にフィードデータを取得すること" do
+    test "フィードソース作成時にタイトルが空の場合、自動的にフィードから取得すること" do
       rss_xml = <<~XML
         <?xml version="1.0" encoding="UTF-8"?>
         <rss version="2.0">
@@ -276,13 +276,13 @@ module Api
 
       assert_difference '@user.feed_sources.count', 1 do
         post api_feed_sources_path,
-             params: { feed_source: { url: 'https://example.com/auto-feed.xml', title: 'Original Title' } },
+             params: { feed_source: { url: 'https://example.com/auto-feed.xml' } },
              headers: @headers
       end
 
       assert_response :created
       json = JSON.parse(response.body)
-      # フィードから取得したタイトルで上書きされる
+      # タイトルが空なのでフィードから取得したタイトルが設定される
       assert_equal 'Auto Fetched Feed', json['feed_source']['title']
       assert_equal 'This feed was automatically fetched', json['feed_source']['description']
 
@@ -290,6 +290,42 @@ module Api
       feed_source = @user.feed_sources.find(json['feed_source']['id'])
       assert_equal 1, feed_source.feed_items.count
       assert_equal 'Auto Item 1', feed_source.feed_items.first.title
+    end
+
+    test "フィードソース作成時にタイトルが指定されている場合、ユーザー指定のタイトルを保持すること" do
+      rss_xml = <<~XML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0">
+          <channel>
+            <title>Feed Title From RSS</title>
+            <description>Feed Description From RSS</description>
+            <item>
+              <guid>item-1</guid>
+              <title>Item 1</title>
+              <link>https://example.com/item-1</link>
+            </item>
+          </channel>
+        </rss>
+      XML
+
+      stub_request(:get, 'https://example.com/custom-feed.xml')
+        .to_return(status: 200, body: rss_xml)
+
+      assert_difference '@user.feed_sources.count', 1 do
+        post api_feed_sources_path,
+             params: { feed_source: { url: 'https://example.com/custom-feed.xml', title: 'My Custom Title', description: 'My Custom Description' } },
+             headers: @headers
+      end
+
+      assert_response :created
+      json = JSON.parse(response.body)
+      # ユーザー指定のタイトルと説明が保持される
+      assert_equal 'My Custom Title', json['feed_source']['title']
+      assert_equal 'My Custom Description', json['feed_source']['description']
+
+      # フィードアイテムは保存される
+      feed_source = @user.feed_sources.find(json['feed_source']['id'])
+      assert_equal 1, feed_source.feed_items.count
     end
   end
 end
