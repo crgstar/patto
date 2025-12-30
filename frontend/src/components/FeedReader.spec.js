@@ -568,4 +568,227 @@ describe('FeedReader', () => {
       )
     })
   })
+
+  describe('フィルタ機能', () => {
+    it('filterModeの初期値がallであること', () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      expect(wrapper.vm.filterMode).toBe('all')
+    })
+
+    it('ToggleGroupが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // ToggleGroupRootコンポーネントが存在することを確認
+      const toggleGroup = wrapper.findComponent({ name: 'ToggleGroupRoot' })
+      expect(toggleGroup.exists()).toBe(true)
+    })
+
+    it('filterModeがallの時は全アイテムが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: '未読記事',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        },
+        {
+          id: 2,
+          title: '既読記事',
+          url: 'https://example.com/2',
+          published_at: new Date().toISOString(),
+          read: true,
+          feed_source_id: 1
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // filterModeがallの場合、filteredFeedItemsは全アイテムを含む
+      expect(wrapper.vm.filteredFeedItems.length).toBe(2)
+      expect(wrapper.vm.filteredFeedItems[0].title).toBe('未読記事')
+      expect(wrapper.vm.filteredFeedItems[1].title).toBe('既読記事')
+    })
+
+    it('filterModeがunreadの時は未読アイテムのみ表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: '未読記事1',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        },
+        {
+          id: 2,
+          title: '既読記事',
+          url: 'https://example.com/2',
+          published_at: new Date().toISOString(),
+          read: true,
+          feed_source_id: 1
+        },
+        {
+          id: 3,
+          title: '未読記事2',
+          url: 'https://example.com/3',
+          published_at: new Date().toISOString(),
+          read: false,
+          feed_source_id: 1
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // filterModeをunreadに変更
+      wrapper.vm.filterMode = 'unread'
+      await wrapper.vm.$nextTick()
+
+      // filteredFeedItemsは未読アイテムのみを含む
+      expect(wrapper.vm.filteredFeedItems.length).toBe(2)
+      expect(wrapper.vm.filteredFeedItems[0].title).toBe('未読記事1')
+      expect(wrapper.vm.filteredFeedItems[1].title).toBe('未読記事2')
+    })
+
+    it('filterMode変更時にスクロール位置がリセットされること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = []
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // スクロールコンテナを取得
+      const scrollContainer = wrapper.vm.scrollContainerRef
+
+      // スクロール位置を設定（モック）
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 500
+        expect(scrollContainer.scrollTop).toBe(500)
+      }
+
+      // filterModeを変更
+      wrapper.vm.filterMode = 'unread'
+      await wrapper.vm.$nextTick()
+
+      // スクロール位置がリセットされることを確認
+      if (scrollContainer) {
+        expect(scrollContainer.scrollTop).toBe(0)
+      }
+    })
+
+    it('未読アイテムがない場合、unreadフィルタで空配列が返ること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+      feedItemStore.feedItems = [
+        {
+          id: 1,
+          title: '既読記事1',
+          url: 'https://example.com/1',
+          published_at: new Date().toISOString(),
+          read: true,
+          feed_source_id: 1
+        },
+        {
+          id: 2,
+          title: '既読記事2',
+          url: 'https://example.com/2',
+          published_at: new Date().toISOString(),
+          read: true,
+          feed_source_id: 1
+        }
+      ]
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: '', content: '' },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      // filterModeをunreadに変更
+      wrapper.vm.filterMode = 'unread'
+      await wrapper.vm.$nextTick()
+
+      // filteredFeedItemsは空配列
+      expect(wrapper.vm.filteredFeedItems.length).toBe(0)
+    })
+  })
 })

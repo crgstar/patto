@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  ToggleGroupRoot,
+  ToggleGroupItem,
+} from '@/components/ui/toggle-group'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -53,6 +57,7 @@ const feedSourceStore = useFeedSourceStore()
 // State
 const selectedFeedSourceId = ref('all') // 'all' = 'すべてのフィード'
 const previousFeedSourceId = ref('all') // Dialog開く前の値を保持
+const filterMode = ref('all') // 'all' | 'unread'
 const limit = ref(20)
 const refreshing = ref(false)
 const manageDialogOpen = ref(false)
@@ -109,6 +114,13 @@ const currentUnreadCount = computed(() => {
     return unreadCounts.value.all || 0
   }
   return unreadCounts.value[selectedFeedSourceId.value] || 0
+})
+
+const filteredFeedItems = computed(() => {
+  if (filterMode.value === 'unread') {
+    return feedItemStore.feedItems.filter(item => !item.read)
+  }
+  return feedItemStore.feedItems
 })
 
 // Methods
@@ -273,6 +285,13 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
   feedItemStore.resetFeedItems()
   fetchFeedItems(false)
 })
+
+watch(filterMode, () => {
+  // フィルタ変更時にスクロール位置を先頭にリセット
+  if (scrollContainerRef.value) {
+    scrollContainerRef.value.scrollTop = 0
+  }
+})
 </script>
 
 <template>
@@ -360,6 +379,16 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
           </SelectContent>
         </Select>
 
+        <!-- フィルタトグルボタングループ -->
+        <ToggleGroupRoot v-model="filterMode" type="single" class="flex-shrink-0">
+          <ToggleGroupItem value="all">
+            すべて
+          </ToggleGroupItem>
+          <ToggleGroupItem value="unread">
+            未読
+          </ToggleGroupItem>
+        </ToggleGroupRoot>
+
         <!-- リフレッシュボタン -->
         <Button
           @click="handleRefresh"
@@ -379,12 +408,12 @@ watch(selectedFeedSourceId, (newValue, oldValue) => {
       @scroll="handleScroll"
       class="flex-1 overflow-y-auto px-2 py-1 scrollbar-subtle"
     >
-      <div v-if="feedItemStore.feedItems.length === 0 && !loading" class="py-4 text-center">
+      <div v-if="filteredFeedItems.length === 0 && !loading" class="py-4 text-center">
         <p class="text-sm text-muted-foreground">フィードがありません</p>
       </div>
       <div v-else class="space-y-1">
         <div
-          v-for="item in feedItemStore.feedItems"
+          v-for="item in filteredFeedItems"
           :key="item.id"
           @click="handleItemClick(item)"
           @contextmenu.prevent="handleItemRightClick(item)"
