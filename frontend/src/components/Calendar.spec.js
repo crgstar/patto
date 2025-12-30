@@ -163,4 +163,55 @@ describe('Calendar', () => {
     expect(wrapper.vm.localeConfig.masks).toBeDefined()
     expect(wrapper.vm.localeConfig.masks.title).toBe('YYYY年 M月')
   })
+
+  it('今日の日付用のattributeが定義されていること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    // todayAttributeが存在することを確認
+    expect(wrapper.vm.todayAttribute).toBeDefined()
+    expect(Array.isArray(wrapper.vm.todayAttribute)).toBe(true)
+    expect(wrapper.vm.todayAttribute.length).toBeGreaterThan(0)
+  })
+
+  it('今日の日付用のattributeに適切なハイライト設定があること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    const todayAttr = wrapper.vm.todayAttribute[0]
+
+    // 基本プロパティの確認
+    expect(todayAttr.key).toBe('today')
+    expect(todayAttr.dates).toBeInstanceOf(Date)
+
+    // ハイライト設定の確認
+    expect(todayAttr.highlight).toBeDefined()
+    expect(todayAttr.highlight.color).toBe('blue')
+    expect(todayAttr.highlight.fillMode).toBe('solid')
+    expect(todayAttr.highlight.class).toBe('today-highlight')
+  })
+
+  it('calendarAttributesに今日の日付が含まれていること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: mockSticky
+      }
+    })
+
+    const calendarAttrs = wrapper.vm.calendarAttributes
+
+    // calendarAttributesが配列であることを確認
+    expect(Array.isArray(calendarAttrs)).toBe(true)
+
+    // 今日の日付のattributeが含まれていることを確認
+    const todayAttr = calendarAttrs.find(attr => attr.key === 'today')
+    expect(todayAttr).toBeDefined()
+    expect(todayAttr.highlight).toBeDefined()
+  })
 })

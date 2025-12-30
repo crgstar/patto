@@ -27,9 +27,20 @@ const { holidayAttributes } = useHolidays(currentYear, currentMonth)
 // 土日データを取得（repeatパターンを使用するため年月指定不要）
 const { weekendAttributes } = useWeekend()
 
-// 祝日と土日の attributes を結合
+// 今日の日付をハイライト表示
+const todayAttribute = computed(() => [{
+  key: 'today',
+  dates: new Date(),
+  highlight: {
+    color: 'blue',
+    fillMode: 'solid',
+    class: 'today-highlight'
+  }
+}])
+
+// 祝日、土日、今日の attributes を結合
 const calendarAttributes = computed(() => {
-  return [...weekendAttributes.value, ...holidayAttributes.value]
+  return [...weekendAttributes.value, ...holidayAttributes.value, ...todayAttribute.value]
 })
 
 const props = defineProps({
@@ -187,4 +198,9 @@ const localeConfig = computed(() => ({
 
 /* v-calendarの公式ダークモード（is-dark prop）を使用 */
 /* 追加のカスタマイズが必要な場合はここに記述 */
+
+/* 今日の日付を目立たせる */
+:deep(.today-highlight) {
+  font-weight: bold !important;
+}
 </style>
