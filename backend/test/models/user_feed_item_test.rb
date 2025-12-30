@@ -159,7 +159,7 @@ class UserFeedItemTest < ActiveSupport::TestCase
       title: 'テスト記事2',
       url: 'https://example.com/article2'
     )
-    ufi2 = UserFeedItem.create!(user: @user, feed_item: feed_item2, starred: false)
+    UserFeedItem.create!(user: @user, feed_item: feed_item2, starred: false)
 
     starred_items = UserFeedItem.where(user: @user).starred_items
     assert_equal 1, starred_items.count, "starred_itemsスコープが正しく動作していません"
