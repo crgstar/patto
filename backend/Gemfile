@@ -66,4 +66,4 @@ end
 
 # Feed parsing
 gem "feedjira", "~> 4.0"
-gem "httparty", "~> 0.21"
+gem "httparty", "~> 0.24"
