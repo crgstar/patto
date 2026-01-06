@@ -1,9 +1,15 @@
-name: CI
+name: Backend CI
 
 on:
   pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
   push:
     branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
 
 jobs:
   scan_ruby:
@@ -16,12 +22,16 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.2.0'
           bundler-cache: true
+          working-directory: ./backend
 
       - name: Scan for common Rails security vulnerabilities using static analysis
+        working-directory: ./backend
         run: bundle exec brakeman --no-pager
-      
+
       - name: Scan for known security vulnerabilities in gems used
+        working-directory: ./backend
         run: bundle exec bundler-audit check --update
       
   lint:
@@ -35,19 +45,22 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.2.0'
           bundler-cache: true
+          working-directory: ./backend
 
       - name: Prepare RuboCop cache
         uses: actions/cache@v4
         env:
-          DEPENDENCIES_HASH: ${{ hashFiles('.ruby-version', '**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
+          DEPENDENCIES_HASH: ${{ hashFiles('backend/.ruby-version', 'backend/**/.rubocop.yml', 'backend/**/.rubocop_todo.yml', 'backend/Gemfile.lock') }}
         with:
-          path: ${{ env.RUBOCOP_CACHE_ROOT }}
+          path: backend/${{ env.RUBOCOP_CACHE_ROOT }}
           key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
           restore-keys: |
             rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
 
       - name: Lint code for consistent style
+        working-directory: ./backend
         run: bin/rubocop -f github
 
   test:
@@ -55,12 +68,19 @@ jobs:
 
     services:
       mysql:
-        image: mysql
+        image: mysql:8.0
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: true
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: patto_test
+          MYSQL_USER: patto_user
+          MYSQL_PASSWORD: patto_password
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
       # redis:
       #   image: valkey/valkey:8
@@ -78,12 +98,19 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.2.0'
           bundler-cache: true
+          working-directory: ./backend
 
       - name: Run tests
+        working-directory: ./backend
         env:
           RAILS_ENV: test
-          DATABASE_URL: mysql2://127.0.0.1:3306
+          DB_HOST: 127.0.0.1
+          DB_USERNAME: patto_user
+          DB_PASSWORD: patto_password
+          PARALLEL_WORKERS: 1
+          SECRET_KEY_BASE: test_secret_key_base_for_ci_environment_only
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
