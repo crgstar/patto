@@ -6,12 +6,16 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
+      - 'backend/app/**'
+      - 'backend/config/**'
+      - 'backend/db/**'
+      - 'backend/lib/**'
+      - 'backend/Gemfile*'
+      - 'backend/Dockerfile'
+      - 'backend/.dockerignore'
+      - 'backend/Rakefile'
+      - 'backend/config.ru'
       - '.github/workflows/deploy-backend.yml'
-    paths-ignore:
-      - 'backend/test/**'
-      - 'backend/**/*.md'
-      - 'backend/.rubocop*.yml'
   workflow_dispatch:  # Allow manual trigger
 
 # Prevent concurrent deployments to the same server
