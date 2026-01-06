@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { User, Plus, Trash2, MoreVertical, StickyNote, Settings } from 'lucide-vue-next'
+import { User, Plus, Trash2, MoreVertical, StickyNote, Settings, Eye, EyeOff } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const router = useRouter()
@@ -136,6 +136,16 @@ const handleReorderChecklistItems = async (checklistId, items) => {
 
 const updateSticky = async (id, field, value) => {
   await stickyStore.updateSticky(id, { [field]: value })
+}
+
+// タイトル表示/非表示を切り替え
+const handleUpdateTitleVisible = async (id, visible) => {
+  await updateSticky(id, 'title_visible', visible)
+}
+
+// タイトルを更新
+const handleUpdateTitle = async (id, title) => {
+  await updateSticky(id, 'title', title)
 }
 
 const openDeleteDialog = (id, type) => {
@@ -347,6 +357,8 @@ const getPadding = (sticky) => {
                 @delete-item="handleDeleteChecklistItem(item.sticky.id, $event)"
                 @reorder-items="handleReorderChecklistItems(item.sticky.id, $event)"
                 @delete="deleteChecklist"
+                @update-title-visible="handleUpdateTitleVisible"
+                @update-title="handleUpdateTitle"
               />
 
               <!-- カレンダー付箋 -->
@@ -354,6 +366,8 @@ const getPadding = (sticky) => {
                 v-else-if="item.sticky.type === 'Calendar'"
                 :sticky="item.sticky"
                 @delete="deleteCalendar"
+                @update-title-visible="handleUpdateTitleVisible"
+                @update-title="handleUpdateTitle"
               />
 
               <!-- フィードリーダー付箋 -->
@@ -363,14 +377,16 @@ const getPadding = (sticky) => {
                 :width="item.w"
                 :height="item.h"
                 @delete="deleteFeedReader"
+                @update-title-visible="handleUpdateTitleVisible"
+                @update-title="handleUpdateTitle"
               />
 
               <!-- 通常の付箋 -->
               <Card
                 v-else
-                class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden"
+                class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden relative"
               >
-                <CardHeader :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(item.sticky).header)">
+                <CardHeader v-if="item.sticky.title_visible" :class="cn('flex flex-row items-center justify-between space-y-0', getPadding(item.sticky).header)">
                   <!-- タイトル表示/編集 -->
                   <div class="flex-1 flex items-center gap-1">
                     <input
@@ -406,6 +422,10 @@ const getPadding = (sticky) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="handleUpdateTitleVisible(item.sticky.id, false)">
+                        <EyeOff class="mr-2 h-4 w-4" />
+                        タイトルを隠す
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         @click="deleteSticky(item.sticky.id)"
                         :data-testid="`delete-sticky-${item.sticky.id}`"
@@ -417,6 +437,35 @@ const getPadding = (sticky) => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
+
+                <!-- タイトルが非表示の場合の3点メニュー -->
+                <div v-else class="absolute top-1 right-1 z-10">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        class="h-5 w-5 hover:bg-accent/10 p-0 flex-shrink-0"
+                      >
+                        <MoreVertical class="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="handleUpdateTitleVisible(item.sticky.id, true)">
+                        <Eye class="mr-2 h-4 w-4" />
+                        タイトルを表示
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        @click="deleteSticky(item.sticky.id)"
+                        :data-testid="`delete-sticky-${item.sticky.id}`"
+                        class="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 class="mr-2 h-4 w-4" />
+                        削除
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 <CardContent :class="cn('overflow-hidden', getPadding(item.sticky).content, getPadding(item.sticky).contentHeight)">
                   <textarea
                     :value="item.sticky.content"

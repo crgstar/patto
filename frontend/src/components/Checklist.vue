@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreVertical, Trash2 } from "lucide-vue-next";
+import { Plus, MoreVertical, Trash2, Eye, EyeOff } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 
 const props = defineProps({
@@ -26,7 +26,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["add-item", "update-item", "delete-item", "reorder-items", "delete"]);
+const emit = defineEmits(["add-item", "update-item", "delete-item", "reorder-items", "delete", "update-title-visible", "update-title"]);
 
 const newItemContent = ref("");
 const draggedItem = ref(null);
@@ -104,11 +104,34 @@ const handleDragEnd = (e) => {
   draggedOverItem.value = null;
 };
 
-// サイズに応じたスタイル調整
-const showTitle = computed(() => props.height > 1);
+// サイズに応じたスタイル調整とtitle_visibleの考慮
+const showTitle = computed(() => props.checklist.title_visible && props.height > 1);
 
 const handleDelete = () => {
   emit("delete", props.checklist.id);
+};
+
+// タイトル表示切り替えハンドラー
+const toggleTitleVisible = () => {
+  emit("update-title-visible", props.checklist.id, !props.checklist.title_visible);
+};
+
+// タイトル編集State
+const editingTitle = ref(false);
+const titleInputValue = ref("");
+
+const startEditingTitle = () => {
+  if (props.checklist.title_visible) {
+    editingTitle.value = true;
+    titleInputValue.value = props.checklist.title || "";
+  }
+};
+
+const finishEditingTitle = () => {
+  if (editingTitle.value) {
+    emit("update-title", props.checklist.id, titleInputValue.value);
+    editingTitle.value = false;
+  }
 };
 </script>
 
@@ -133,6 +156,11 @@ const handleDelete = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="toggleTitleVisible">
+            <Eye v-if="!checklist.title_visible" class="mr-2 h-4 w-4" />
+            <EyeOff v-else class="mr-2 h-4 w-4" />
+            {{ checklist.title_visible ? 'タイトルを隠す' : 'タイトルを表示' }}
+          </DropdownMenuItem>
           <DropdownMenuItem
             @click="handleDelete"
             data-testid="delete-checklist-button"
@@ -147,10 +175,21 @@ const handleDelete = () => {
     <!-- Header (タイトルと進捗表示) -->
     <div class="px-3 pt-2 pb-0.5 pr-8">
       <!-- タイトル -->
-      <div v-if="showTitle && checklist.title" class="mb-0.5">
-        <h3 class="text-lg font-semibold text-foreground line-clamp-1">
-          {{ checklist.title }}
-        </h3>
+      <div v-if="showTitle" class="mb-0.5">
+        <input
+          v-if="editingTitle"
+          v-model="titleInputValue"
+          @blur="finishEditingTitle"
+          @keyup.enter="finishEditingTitle"
+          placeholder="タイトル"
+          class="w-full bg-transparent border-b border-border text-lg font-semibold text-foreground focus:outline-none focus:border-primary"
+          autofocus
+        />
+        <div v-else @click="startEditingTitle" class="cursor-pointer">
+          <h3 :class="cn('text-lg font-semibold line-clamp-1', checklist.title ? 'text-foreground' : 'text-muted-foreground')">
+            {{ checklist.title || 'タイトル' }}
+          </h3>
+        </div>
       </div>
 
       <!-- 進捗表示 -->

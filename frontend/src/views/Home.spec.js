@@ -122,8 +122,8 @@ describe('Home.vue', () => {
       vi.spyOn(stickyStore, 'fetchStickies').mockResolvedValue()
 
       stickyStore.stickies = [
-        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1 },
-        { id: 2, type: 'Sticky', title: 'Test 2', content: 'Content 2', position: 2, x: 1, y: 0, width: 1, height: 1 }
+        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1, title_visible: true },
+        { id: 2, type: 'Sticky', title: 'Test 2', content: 'Content 2', position: 2, x: 1, y: 0, width: 1, height: 1, title_visible: true }
       ]
 
       const wrapper = mount(Home, {
@@ -205,7 +205,7 @@ describe('Home.vue', () => {
       vi.spyOn(stickyStore, 'updateSticky').mockResolvedValue(true)
 
       stickyStore.stickies = [
-        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1 }
+        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1, title_visible: true }
       ]
 
       const wrapper = mount(Home, {
@@ -239,7 +239,7 @@ describe('Home.vue', () => {
       vi.spyOn(stickyStore, 'deleteSticky').mockResolvedValue(true)
 
       stickyStore.stickies = [
-        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1 }
+        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1, title_visible: true }
       ]
 
       const wrapper = mount(Home, {
@@ -277,7 +277,7 @@ describe('Home.vue', () => {
       vi.spyOn(stickyStore, 'deleteSticky').mockResolvedValue(true)
 
       stickyStore.stickies = [
-        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1 }
+        { id: 1, type: 'Sticky', title: 'Test 1', content: 'Content 1', position: 1, x: 0, y: 0, width: 1, height: 1, title_visible: true }
       ]
 
       const wrapper = mount(Home, {

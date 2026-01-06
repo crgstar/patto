@@ -58,7 +58,7 @@ module Api
     end
 
     def sticky_params
-      params.require(:sticky).permit(:type, :title, :content, :position, :x, :y, :width, :height)
+      params.require(:sticky).permit(:type, :title, :content, :position, :x, :y, :width, :height, :title_visible)
     end
 
     def sticky_response(sticky)
@@ -66,6 +66,7 @@ module Api
         id: sticky.id,
         type: sticky.type,
         title: sticky.title,
+        title_visible: sticky.title_visible,
         content: sticky.content,
         position: sticky.position,
         x: sticky.x,

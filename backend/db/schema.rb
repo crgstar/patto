@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_16_110254) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_06_153213) do
   create_table "checklist_items", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.boolean "checked", default: false, null: false
     t.text "content", null: false
@@ -64,6 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_16_110254) do
     t.integer "height", default: 1, null: false
     t.integer "position", default: 0, null: false
     t.string "title"
+    t.boolean "title_visible", default: true, null: false
     t.string "type", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false

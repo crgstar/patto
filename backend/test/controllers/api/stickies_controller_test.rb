@@ -471,4 +471,179 @@ class Api::StickiesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, @sticky.position
     assert_equal 1, calendar.position
   end
+
+  # title_visible tests
+  test "should create sticky with title_visible true by default" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Sticky',
+             title: 'Test Sticky'
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal true, json_response['sticky']['title_visible']
+  end
+
+  test "should create sticky with title_visible false" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Sticky',
+             title: 'Test Sticky',
+             title_visible: false
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal false, json_response['sticky']['title_visible']
+  end
+
+  test "should update title_visible to false" do
+    patch api_sticky_url(@sticky),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              title_visible: false
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal false, json_response['sticky']['title_visible']
+
+    @sticky.reload
+    assert_equal false, @sticky.title_visible
+  end
+
+  test "should update title_visible to true" do
+    @sticky.update!(title_visible: false)
+
+    patch api_sticky_url(@sticky),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              title_visible: true
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal true, json_response['sticky']['title_visible']
+
+    @sticky.reload
+    assert_equal true, @sticky.title_visible
+  end
+
+  test "should include title_visible in index response" do
+    get api_stickies_url,
+        headers: { 'Authorization' => "Bearer #{@token}" },
+        as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    sticky_data = json_response['stickies'].first
+
+    assert_not_nil sticky_data['title_visible']
+    assert_equal true, sticky_data['title_visible']
+  end
+
+  test "should create calendar with title_visible true by default" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Calendar',
+             title: 'Test Calendar'
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal true, json_response['sticky']['title_visible']
+  end
+
+  test "should create checklist with title_visible true by default" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'Checklist',
+             title: 'Test Checklist'
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal true, json_response['sticky']['title_visible']
+  end
+
+  test "should create feed reader with title_visible true by default" do
+    post api_stickies_url,
+         headers: { 'Authorization' => "Bearer #{@token}" },
+         params: {
+           sticky: {
+             type: 'FeedReader',
+             title: 'Test Feed Reader'
+           }
+         },
+         as: :json
+
+    assert_response :created
+    json_response = JSON.parse(response.body)
+    assert_equal true, json_response['sticky']['title_visible']
+  end
+
+  test "should update calendar title_visible" do
+    calendar = Calendar.create!(
+      title: 'Test Calendar',
+      position: 1,
+      user: @user
+    )
+
+    patch api_sticky_url(calendar),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              title_visible: false
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal false, json_response['sticky']['title_visible']
+  end
+
+  test "should update checklist title_visible" do
+    checklist = Checklist.create!(
+      title: 'Test Checklist',
+      position: 1,
+      user: @user
+    )
+
+    patch api_sticky_url(checklist),
+          headers: { 'Authorization' => "Bearer #{@token}" },
+          params: {
+            sticky: {
+              title_visible: false
+            }
+          },
+          as: :json
+
+    assert_response :ok
+    json_response = JSON.parse(response.body)
+    assert_equal false, json_response['sticky']['title_visible']
+  end
 end
