@@ -9,7 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreVertical, Trash2 } from 'lucide-vue-next'
+import { MoreVertical, Trash2, Eye, EyeOff } from 'lucide-vue-next'
+import { cn } from '@/lib/utils'
 import { useTheme } from '@/composables/useTheme'
 import { useHolidays } from '@/composables/useHolidays'
 import { useWeekend } from '@/composables/useWeekend'
@@ -50,7 +51,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['delete'])
+const emit = defineEmits(['delete', 'update-title-visible', 'update-title'])
 
 // サイズに基づいてスケールを計算
 const getScale = computed(() => {
@@ -83,6 +84,34 @@ const handleDelete = () => {
   emit('delete', props.sticky.id)
 }
 
+// タイトル表示切り替えハンドラー
+const toggleTitleVisible = () => {
+  emit('update-title-visible', props.sticky.id, !props.sticky.title_visible)
+}
+
+// タイトル編集State
+const editingTitle = ref(false)
+const titleInputValue = ref('')
+
+const startEditingTitle = () => {
+  if (props.sticky.title_visible) {
+    editingTitle.value = true
+    titleInputValue.value = props.sticky.title || ''
+  }
+}
+
+const finishEditingTitle = () => {
+  if (editingTitle.value) {
+    emit('update-title', props.sticky.id, titleInputValue.value)
+    editingTitle.value = false
+  }
+}
+
+// タイトル表示判定
+const showTitle = computed(() => {
+  return props.sticky.title_visible
+})
+
 // カレンダーの月が変更された時に年月を更新
 const updatePages = (pages) => {
   if (pages && pages.length > 0) {
@@ -102,9 +131,27 @@ const localeConfig = computed(() => ({
 
 <template>
   <Card
-    class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden relative"
+    class="group bg-card border-border shadow-sm hover:shadow-md hover:border-accent/50 transition-all h-full overflow-hidden relative flex flex-col"
   >
-    <!-- 削除ボタン（右上に配置） -->
+    <!-- タイトル -->
+    <div v-if="showTitle" class="px-3 pt-2 pb-1 pr-8">
+      <input
+        v-if="editingTitle"
+        v-model="titleInputValue"
+        @blur="finishEditingTitle"
+        @keyup.enter="finishEditingTitle"
+        placeholder="タイトル"
+        class="w-full bg-transparent border-b border-border text-lg font-semibold text-foreground focus:outline-none focus:border-primary"
+        autofocus
+      />
+      <div v-else @click="startEditingTitle" class="cursor-pointer">
+        <h3 :class="cn('text-lg font-semibold line-clamp-1', sticky.title ? 'text-foreground' : 'text-muted-foreground')">
+          {{ sticky.title || 'タイトル' }}
+        </h3>
+      </div>
+    </div>
+
+    <!-- オプションメニュー（右上に配置） -->
     <div class="absolute top-1 right-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
@@ -117,6 +164,11 @@ const localeConfig = computed(() => ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="toggleTitleVisible">
+            <Eye v-if="!sticky.title_visible" class="mr-2 h-4 w-4" />
+            <EyeOff v-else class="mr-2 h-4 w-4" />
+            {{ sticky.title_visible ? 'タイトルを隠す' : 'タイトルを表示' }}
+          </DropdownMenuItem>
           <DropdownMenuItem
             @click="handleDelete"
             data-testid="delete-calendar-button"
@@ -130,7 +182,7 @@ const localeConfig = computed(() => ({
     </div>
 
     <!-- カレンダー表示（正方形を強制） -->
-    <div class="w-full h-full flex items-center justify-center p-0.5">
+    <div class="w-full flex-1 flex items-center justify-center p-0.5">
       <div
         class="calendar-container"
         :style="{

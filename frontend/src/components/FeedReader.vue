@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import FeedSourceManager from '@/components/FeedSourceManager.vue'
-import { MoreVertical, Trash2, RefreshCw, Settings } from 'lucide-vue-next'
+import { MoreVertical, Trash2, RefreshCw, Settings, Eye, EyeOff } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
 
 const props = defineProps({
@@ -47,7 +47,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['delete'])
+const emit = defineEmits(['delete', 'update-title-visible', 'update-title'])
 
 // ストア
 const stickyFeedSourceStore = useStickyFeedSourceStore()
@@ -234,6 +234,34 @@ const handleDelete = () => {
   emit('delete', props.feedReader.id)
 }
 
+// タイトル表示切り替えハンドラー
+const toggleTitleVisible = () => {
+  emit('update-title-visible', props.feedReader.id, !props.feedReader.title_visible)
+}
+
+// タイトル編集State
+const editingTitle = ref(false)
+const titleInputValue = ref('')
+
+const startEditingTitle = () => {
+  if (props.feedReader.title_visible) {
+    editingTitle.value = true
+    titleInputValue.value = props.feedReader.title || ''
+  }
+}
+
+const finishEditingTitle = () => {
+  if (editingTitle.value) {
+    emit('update-title', props.feedReader.id, titleInputValue.value)
+    editingTitle.value = false
+  }
+}
+
+// Computed
+const showTitle = computed(() => {
+  return props.feedReader.title_visible && props.height > 1
+})
+
 // カーソル追跡型ツールチップのハンドラー
 const handleMouseEnter = (event, item) => {
   if (item.description) {
@@ -315,6 +343,11 @@ watch(filterMode, () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem @click="toggleTitleVisible">
+            <Eye v-if="!feedReader.title_visible" class="mr-2 h-4 w-4" />
+            <EyeOff v-else class="mr-2 h-4 w-4" />
+            {{ feedReader.title_visible ? 'タイトルを隠す' : 'タイトルを表示' }}
+          </DropdownMenuItem>
           <DropdownMenuItem
             @click="handleDelete"
             data-testid="delete-feedreader-button"
@@ -325,6 +358,24 @@ watch(filterMode, () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+    </div>
+
+    <!-- タイトル -->
+    <div v-if="showTitle" class="px-3 pt-2 pb-1 pr-8">
+      <input
+        v-if="editingTitle"
+        v-model="titleInputValue"
+        @blur="finishEditingTitle"
+        @keyup.enter="finishEditingTitle"
+        placeholder="タイトル"
+        class="w-full bg-transparent border-b border-border text-lg font-semibold text-foreground focus:outline-none focus:border-primary"
+        autofocus
+      />
+      <div v-else @click="startEditingTitle" class="cursor-pointer">
+        <h3 :class="cn('text-lg font-semibold line-clamp-1', feedReader.title ? 'text-foreground' : 'text-muted-foreground')">
+          {{ feedReader.title || 'タイトル' }}
+        </h3>
+      </div>
     </div>
 
     <!-- ヘッダー -->
