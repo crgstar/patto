@@ -8,7 +8,16 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
+    paths-ignore:
+      - 'backend/test/**'
+      - 'backend/**/*.md'
+      - 'backend/.rubocop*.yml'
   workflow_dispatch:  # Allow manual trigger
+
+# Prevent concurrent deployments to the same server
+concurrency:
+  group: backend-deploy-production
+  cancel-in-progress: false
 
 env:
   RUBY_VERSION: '3.2.0'
