@@ -214,4 +214,55 @@ describe('Calendar', () => {
     expect(todayAttr).toBeDefined()
     expect(todayAttr.highlight).toBeDefined()
   })
+
+  it('title_visibleがtrueの場合、タイトルが表示されること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: { ...mockSticky, title: 'テストカレンダー', title_visible: true }
+      }
+    })
+
+    expect(wrapper.vm.showTitle).toBe(true)
+  })
+
+  it('title_visibleがfalseの場合、タイトルが非表示になること', () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: { ...mockSticky, title: 'テストカレンダー', title_visible: false }
+      }
+    })
+
+    expect(wrapper.vm.showTitle).toBe(false)
+  })
+
+  it('toggleTitleVisibleがupdate-title-visibleイベントを発火すること', async () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: { ...mockSticky, title: 'テストカレンダー', title_visible: true }
+      }
+    })
+
+    await wrapper.vm.toggleTitleVisible()
+
+    expect(wrapper.emitted('update-title-visible')).toBeTruthy()
+    expect(wrapper.emitted('update-title-visible')[0]).toEqual([1, false])
+  })
+
+  it('finishEditingTitleがupdate-titleイベントを発火すること', async () => {
+    const wrapper = mount(Calendar, {
+      props: {
+        sticky: { ...mockSticky, title: 'テストカレンダー', title_visible: true }
+      }
+    })
+
+    wrapper.vm.editingTitle = true
+    wrapper.vm.titleInputValue = '新しいタイトル'
+    await wrapper.vm.$nextTick()
+
+    await wrapper.vm.finishEditingTitle()
+
+    expect(wrapper.emitted('update-title')).toBeTruthy()
+    expect(wrapper.emitted('update-title')[0]).toEqual([1, '新しいタイトル'])
+    expect(wrapper.vm.editingTitle).toBe(false)
+  })
 })

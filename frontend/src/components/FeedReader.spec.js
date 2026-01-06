@@ -791,4 +791,122 @@ describe('FeedReader', () => {
       expect(wrapper.vm.filteredFeedItems.length).toBe(0)
     })
   })
+
+  describe('タイトル表示/非表示', () => {
+    it('title_visibleがtrueでheight>1の場合、タイトルが表示されること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: 'テストタイトル', title_visible: true },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showTitle).toBe(true)
+    })
+
+    it('title_visibleがfalseの場合、タイトルが非表示になること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: 'テストタイトル', title_visible: false },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showTitle).toBe(false)
+    })
+
+    it('height<=1の場合、title_visibleがtrueでもタイトルが非表示になること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: 'テストタイトル', title_visible: true },
+          width: 3,
+          height: 1
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.showTitle).toBe(false)
+    })
+
+    it('toggleTitleVisibleがupdate-title-visibleイベントを発火すること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: 'テストタイトル', title_visible: true },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      await wrapper.vm.toggleTitleVisible()
+
+      expect(wrapper.emitted('update-title-visible')).toBeTruthy()
+      expect(wrapper.emitted('update-title-visible')[0]).toEqual([1, false])
+    })
+
+    it('finishEditingTitleがupdate-titleイベントを発火すること', async () => {
+      const stickyFeedSourceStore = useStickyFeedSourceStore()
+      const feedItemStore = useFeedItemStore()
+
+      stickyFeedSourceStore.fetchStickyFeedSources = vi.fn().mockResolvedValue()
+      stickyFeedSourceStore.stickyFeedSources = []
+      feedItemStore.fetchFeedItems = vi.fn().mockResolvedValue()
+
+      const wrapper = mount(FeedReader, {
+        props: {
+          feedReader: { id: 1, type: 'FeedReader', title: 'テストタイトル', title_visible: true },
+          width: 3,
+          height: 3
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.editingTitle = true
+      wrapper.vm.titleInputValue = '新しいタイトル'
+      await wrapper.vm.$nextTick()
+
+      await wrapper.vm.finishEditingTitle()
+
+      expect(wrapper.emitted('update-title')).toBeTruthy()
+      expect(wrapper.emitted('update-title')[0]).toEqual([1, '新しいタイトル'])
+      expect(wrapper.vm.editingTitle).toBe(false)
+    })
+  })
 })
