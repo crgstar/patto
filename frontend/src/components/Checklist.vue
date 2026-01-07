@@ -145,16 +145,16 @@ const handleDelete = () => {
       </DropdownMenu>
     </div>
     <!-- Header (タイトルと進捗表示) -->
-    <div class="px-3 pt-2 pb-0.5 pr-8">
+    <div class="px-2 pt-1 pb-0 pr-8">
       <!-- タイトル -->
-      <div v-if="showTitle && checklist.title" class="mb-0.5">
-        <h3 class="text-lg font-semibold text-foreground line-clamp-1">
+      <div v-if="showTitle && checklist.title" class="mb-0">
+        <h3 class="text-base font-semibold text-foreground line-clamp-1">
           {{ checklist.title }}
         </h3>
       </div>
 
       <!-- 進捗表示 -->
-      <div class="flex items-center gap-1 text-[10px] py-0">
+      <div class="flex items-center gap-0.5 text-[10px] py-0">
         <div class="flex-1 h-0.5 bg-muted rounded-full overflow-hidden">
           <div
             class="h-full bg-secondary transition-all duration-300"
@@ -168,13 +168,13 @@ const handleDelete = () => {
     </div>
 
     <!-- New Item Input -->
-    <div class="px-3 pt-0 pb-2">
-      <div class="flex gap-2">
+    <div class="px-2 pt-0 pb-1">
+      <div class="flex gap-1.5">
         <input
           v-model="newItemContent"
           type="text"
           placeholder="新しいタスクを入力..."
-          class="flex-1 px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+          class="flex-1 px-2 py-1 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
           @keydown="handleKeydown"
         />
         <Button
@@ -190,13 +190,13 @@ const handleDelete = () => {
     </div>
 
     <!-- Checklist Items -->
-    <div class="flex-1 overflow-y-auto px-2 py-1">
-      <div v-if="sortedItems.length === 0" class="py-4 text-center">
+    <div class="flex-1 overflow-y-auto px-2 py-0">
+      <div v-if="sortedItems.length === 0" class="py-2 text-center">
         <p class="text-sm text-muted-foreground">
           タスクを追加してください
         </p>
       </div>
-      <div v-else class="space-y-1">
+      <div v-else class="space-y-0.5">
         <div
           v-for="item in sortedItems"
           :key="item.id"

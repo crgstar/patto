@@ -100,23 +100,23 @@ watch(isEditing, (newVal) => {
 <template>
   <div
     ref="itemElement"
-    class="group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent/50 transition-colors bg-card"
+    class="group flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-accent/50 transition-colors bg-card"
   >
     <!-- Drag Handle -->
     <div
-      class="drag-handle shrink-0 cursor-ns-resize p-1 -ml-1 hover:bg-accent/30 rounded transition-colors"
+      class="drag-handle shrink-0 cursor-ns-resize p-0.5 -ml-1 hover:bg-accent/30 rounded transition-colors"
       draggable="true"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
       @mousedown.stop
       @click.stop
     >
-      <GripVertical class="h-4 w-4 text-muted-foreground" />
+      <GripVertical class="h-3.5 w-3.5 text-muted-foreground" />
     </div>
 
     <!-- Clickable area for checkbox and content -->
-    <div 
-      class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+    <div
+      class="flex items-center gap-1.5 flex-1 min-w-0 cursor-pointer"
       @click="toggleCheck"
     >
       <!-- Checkbox -->
@@ -133,7 +133,7 @@ watch(isEditing, (newVal) => {
           v-model="editContent"
           type="text"
           ref="editInput"
-          class="w-full px-2 py-1 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
+          class="w-full px-2 py-0.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
           @blur="saveEdit"
           @keydown="handleKeydown"
           @click.stop
@@ -154,21 +154,21 @@ watch(isEditing, (newVal) => {
 
     <!-- Action Buttons (visible on hover) -->
     <div
-      class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+      class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
     >
       <button
         @click="startEdit"
-        class="p-1.5 rounded hover:bg-accent transition-colors"
+        class="p-1 rounded hover:bg-accent transition-colors"
         title="編集"
       >
-        <Pencil class="h-4 w-4 text-purple-500" />
+        <Pencil class="h-3.5 w-3.5 text-purple-500" />
       </button>
       <button
         @click="handleDelete"
-        class="p-1.5 rounded hover:bg-accent transition-colors"
+        class="p-1 rounded hover:bg-accent transition-colors"
         title="削除"
       >
-        <Trash2 class="h-4 w-4 text-destructive" />
+        <Trash2 class="h-3.5 w-3.5 text-destructive" />
       </button>
     </div>
   </div>
