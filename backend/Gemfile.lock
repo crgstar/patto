@@ -148,7 +148,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     json (2.18.0)
-    jwt (2.10.2)
+    jwt (3.1.2)
       base64
     kamal (2.10.1)
       activesupport (>= 7.0)
@@ -400,7 +400,7 @@ DEPENDENCIES
   feedjira (~> 4.0)
   httparty (~> 0.24)
   image_processing (~> 1.2)
-  jwt (~> 2.7)
+  jwt (~> 3.1)
   kamal
   kaminari
   mysql2 (~> 0.5)
